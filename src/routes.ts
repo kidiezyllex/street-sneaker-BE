@@ -4,6 +4,7 @@ import { connectDB } from "./config/database.js";
 import { setupSwagger } from "./config/swagger.js";
 import { errorHandler, notFound } from "./middlewares/error.middleware.js";
 import { Request, Response } from "express";
+import { Router } from 'express';
 
 // Import routes
 import authRoutes from "./routes/auth.routes.js";
@@ -17,6 +18,7 @@ import voucherRoutes from "./routes/voucher.routes.js";
 import billRoutes from "./routes/bill.routes.js";
 import accountRoutes from "./routes/account.routes.js";
 
+const router = Router();
 export async function registerRoutes(app: Express): Promise<Server> {
   try {
     // Connect to database
@@ -56,4 +58,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.error("Error registering routes:", error);
     throw error;
   }
-} 
+}
+
+export default router; 

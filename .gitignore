@@ -25,3 +25,4 @@ npm-debug.log*
 server/public
 vite.config.ts.*
 *.tar.gz
+yaml.lock
