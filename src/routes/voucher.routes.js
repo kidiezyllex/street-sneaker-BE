@@ -8,8 +8,6 @@ import {
   addCustomerToVoucher,
   removeCustomerFromVoucher,
   checkVoucher,
-  getCustomerVouchers,
-  getActiveVouchers
 } from '../controllers/voucher.controller.js';
 import { protect, admin, staff } from '../middlewares/auth.middleware.js';
 
@@ -256,33 +254,6 @@ router.put('/:id', protect, admin, updateVoucher);
  *         description: Không tìm thấy voucher
  */
 router.delete('/:id', protect, admin, deleteVoucher);
-
-/**
- * @swagger
- * /vouchers/active:
- *   get:
- *     summary: Lấy danh sách voucher đang hoạt động
- *     tags: [Vouchers]
- *     responses:
- *       200:
- *         description: Danh sách voucher đang hoạt động
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: Lấy danh sách voucher thành công
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Voucher'
- */
-router.get('/active', getActiveVouchers);
 
 /**
  * @swagger
