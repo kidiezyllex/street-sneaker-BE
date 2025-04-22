@@ -2,10 +2,12 @@ import express from 'express';
 import { protect } from '../middlewares/auth.middleware.js';
 import upload, { handleUploadError } from '../middlewares/upload.middleware.js';
 import { uploadImage } from '../controllers/upload.controller.js';
+
 const router = express.Router();
+
 /**
  * @swagger
- * /api/upload/image:
+ * /upload/image:
  *   post:
  *     summary: Upload ảnh lên Cloudinary
  *     tags: [Upload]
@@ -27,7 +29,7 @@ const router = express.Router();
  *             schema:
  *               type: object
  *               properties:
- *                 success:
+ *                 status:
  *                   type: boolean
  *                   example: true
  *                 message:
@@ -44,10 +46,11 @@ const router = express.Router();
  *                       example: street-sneaker/user-id/images/example
  *       400:
  *         description: Dữ liệu không hợp lệ
+ *       401:
+ *         description: Không được phép
  *       500:
  *         description: Lỗi server
  */
 router.post('/image', protect, upload.single('file'), handleUploadError, uploadImage);
-
 
 export default router; 
