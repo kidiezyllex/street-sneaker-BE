@@ -117,8 +117,6 @@ export const updateCategory = async (req, res) => {
   }
 };
 
-// =================== Color Controller ===================
-
 // Lấy danh sách tất cả màu sắc
 export const getAllColors = async (req, res) => {
   try {
