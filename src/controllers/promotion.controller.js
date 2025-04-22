@@ -1,5 +1,5 @@
 import { Promotion, Voucher } from '../models/index.js';
-import { validateVoucher, validateProductPromotion } from '../utils/validation';
+import { validateVoucher, validateProductPromotion } from '../utils/validation.js';
 
 /**
  * Lấy danh sách tất cả khuyến mãi có phân trang

@@ -1,4 +1,3 @@
-
 import User from '../models/user.model.js';
 import { validateUser, validateAddress, validatePassword } from '../utils/validation.js';
 import { hashPassword, comparePassword } from '../utils/auth.js';
@@ -490,252 +489,469 @@ export const deleteAddress = async (req, res) => {
   }
 };
 
-// Quản lý tài khoản nhân viên
-exports.getStaffAccounts = async (req, res) => {
+// Lấy danh sách tài khoản nhân viên
+export const getStaffAccounts = async (req, res) => {
   try {
     const { page = 1, limit = 10, status } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    // Xây dựng query
     const query = { role: 'STAFF' };
     if (status) query.status = status;
-
-    const staff = await User.find(query)
+    
+    // Thực hiện truy vấn với phân trang
+    const total = await User.countDocuments(query);
+    const staffAccounts = await User.find(query)
       .select('-password')
       .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit)
-      .exec();
-
-    const count = await User.countDocuments(query);
-
-    res.json({
-      staff,
-      totalPages: Math.ceil(count / limit),
-      currentPage: page
+      .skip(skip)
+      .limit(parseInt(limit));
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Lấy danh sách tài khoản nhân viên thành công',
+      data: {
+        accounts: staffAccounts,
+        pagination: {
+          totalItems: total,
+          totalPages: Math.ceil(total / parseInt(limit)),
+          currentPage: parseInt(page),
+          limit: parseInt(limit)
+        }
+      }
     });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    return res.status(500).json({
+      success: false,
+      message: 'Đã xảy ra lỗi khi lấy danh sách tài khoản nhân viên',
+      error: error.message
+    });
   }
 };
 
-exports.getStaffAccountById = async (req, res) => {
+// Lấy thông tin chi tiết tài khoản nhân viên
+export const getStaffAccountById = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select('-password');
-    if (!user || user.role !== 'STAFF') {
-      return res.status(404).json({ message: 'Không tìm thấy tài khoản nhân viên' });
-    }
-    res.json(user);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-};
-
-exports.updateStaffAccount = async (req, res) => {
-  try {
-    const validatedData = validateUser(req.body);
-    const user = await User.findById(req.params.id);
+    const { id } = req.params;
     
-    if (!user || user.role !== 'STAFF') {
-      return res.status(404).json({ message: 'Không tìm thấy tài khoản nhân viên' });
-    }
-
-    if (validatedData.password) {
-      validatedData.password = await hashPassword(validatedData.password);
-    }
-
-    Object.assign(user, validatedData);
-    await user.save();
+    const staffAccount = await User.findOne({ _id: id, role: 'STAFF' }).select('-password');
     
-    const userResponse = user.toObject();
-    delete userResponse.password;
-    
-    res.json(userResponse);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-};
-
-exports.deleteStaffAccount = async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id);
-    if (!user || user.role !== 'STAFF') {
-      return res.status(404).json({ message: 'Không tìm thấy tài khoản nhân viên' });
+    if (!staffAccount) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy tài khoản nhân viên'
+      });
     }
-
-    await user.remove();
-    res.json({ message: 'Đã xóa tài khoản nhân viên' });
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Lấy thông tin tài khoản nhân viên thành công',
+      data: staffAccount
+    });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    return res.status(500).json({
+      success: false,
+      message: 'Đã xảy ra lỗi khi lấy thông tin tài khoản nhân viên',
+      error: error.message
+    });
   }
 };
 
-exports.scanStaffId = async (req, res) => {
+// Cập nhật tài khoản nhân viên
+export const updateStaffAccount = async (req, res) => {
   try {
-    const { image } = req.files;
-    const staffData = await scanIdCard(image.path);
-    res.json(staffData);
+    const { id } = req.params;
+    const { fullName, email, phoneNumber, status } = req.body;
+    
+    // Tìm tài khoản nhân viên cần cập nhật
+    const staffAccount = await User.findOne({ _id: id, role: 'STAFF' });
+    
+    if (!staffAccount) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy tài khoản nhân viên'
+      });
+    }
+    
+    // Kiểm tra email hoặc số điện thoại đã tồn tại
+    if (email && email !== staffAccount.email) {
+      const existingEmailAccount = await User.findOne({ email });
+      if (existingEmailAccount) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email đã được sử dụng'
+        });
+      }
+    }
+    
+    if (phoneNumber && phoneNumber !== staffAccount.phoneNumber) {
+      const existingPhoneAccount = await User.findOne({ phoneNumber });
+      if (existingPhoneAccount) {
+        return res.status(400).json({
+          success: false,
+          message: 'Số điện thoại đã được sử dụng'
+        });
+      }
+    }
+    
+    // Cập nhật thông tin
+    if (fullName) staffAccount.fullName = fullName;
+    if (email) staffAccount.email = email;
+    if (phoneNumber) staffAccount.phoneNumber = phoneNumber;
+    if (status) staffAccount.status = status;
+    
+    await staffAccount.save();
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Cập nhật tài khoản nhân viên thành công',
+      data: {
+        _id: staffAccount._id,
+        fullName: staffAccount.fullName,
+        email: staffAccount.email,
+        phoneNumber: staffAccount.phoneNumber,
+        role: staffAccount.role,
+        status: staffAccount.status
+      }
+    });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    return res.status(500).json({
+      success: false,
+      message: 'Đã xảy ra lỗi khi cập nhật tài khoản nhân viên',
+      error: error.message
+    });
   }
 };
 
-// Quản lý tài khoản khách hàng
-exports.getCustomerAccounts = async (req, res) => {
+// Xóa tài khoản nhân viên
+export const deleteStaffAccount = async (req, res) => {
   try {
-    const { page = 1, limit = 10, status } = req.query;
+    const { id } = req.params;
+    
+    const staffAccount = await User.findOneAndDelete({ _id: id, role: 'STAFF' });
+    
+    if (!staffAccount) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy tài khoản nhân viên'
+      });
+    }
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Xóa tài khoản nhân viên thành công'
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Đã xảy ra lỗi khi xóa tài khoản nhân viên',
+      error: error.message
+    });
+  }
+};
+
+// Quét CCCD/CMND nhân viên
+export const scanStaffId = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng tải lên hình ảnh CCCD/CMND'
+      });
+    }
+    
+    // Sử dụng hàm scanIdCard từ utils/scanner.js
+    const result = await scanIdCard(req.file.buffer);
+    
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        message: 'Không thể nhận dạng CCCD/CMND',
+        error: result.error
+      });
+    }
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Quét CCCD/CMND thành công',
+      data: result.data
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Đã xảy ra lỗi khi quét CCCD/CMND',
+      error: error.message
+    });
+  }
+};
+
+// Lấy danh sách tài khoản khách hàng
+export const getCustomerAccounts = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, status, search } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    // Xây dựng query
     const query = { role: 'CUSTOMER' };
     if (status) query.status = status;
-
-    const customers = await User.find(query)
+    
+    if (search) {
+      query.$or = [
+        { fullName: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { phoneNumber: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    // Thực hiện truy vấn với phân trang
+    const total = await User.countDocuments(query);
+    const customerAccounts = await User.find(query)
       .select('-password')
       .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit)
-      .exec();
-
-    const count = await User.countDocuments(query);
-
-    res.json({
-      customers,
-      totalPages: Math.ceil(count / limit),
-      currentPage: page
+      .skip(skip)
+      .limit(parseInt(limit));
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Lấy danh sách tài khoản khách hàng thành công',
+      data: {
+        accounts: customerAccounts,
+        pagination: {
+          totalItems: total,
+          totalPages: Math.ceil(total / parseInt(limit)),
+          currentPage: parseInt(page),
+          limit: parseInt(limit)
+        }
+      }
     });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    return res.status(500).json({
+      success: false,
+      message: 'Đã xảy ra lỗi khi lấy danh sách tài khoản khách hàng',
+      error: error.message
+    });
   }
 };
 
-exports.getCustomerAccountById = async (req, res) => {
+// Lấy thông tin chi tiết tài khoản khách hàng
+export const getCustomerAccountById = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select('-password');
-    if (!user || user.role !== 'CUSTOMER') {
-      return res.status(404).json({ message: 'Không tìm thấy tài khoản khách hàng' });
-    }
-    res.json(user);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-};
-
-exports.updateCustomerAccount = async (req, res) => {
-  try {
-    const validatedData = validateUser(req.body);
-    const user = await User.findById(req.params.id);
+    const { id } = req.params;
     
-    if (!user || user.role !== 'CUSTOMER') {
-      return res.status(404).json({ message: 'Không tìm thấy tài khoản khách hàng' });
-    }
-
-    Object.assign(user, validatedData);
-    await user.save();
+    const customerAccount = await User.findOne({ _id: id, role: 'CUSTOMER' }).select('-password');
     
-    const userResponse = user.toObject();
-    delete userResponse.password;
+    if (!customerAccount) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy tài khoản khách hàng'
+      });
+    }
     
-    res.json(userResponse);
+    return res.status(200).json({
+      success: true,
+      message: 'Lấy thông tin tài khoản khách hàng thành công',
+      data: customerAccount
+    });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    return res.status(500).json({
+      success: false,
+      message: 'Đã xảy ra lỗi khi lấy thông tin tài khoản khách hàng',
+      error: error.message
+    });
   }
 };
 
-exports.addCustomerAddress = async (req, res) => {
+// Cập nhật tài khoản khách hàng
+export const updateCustomerAccount = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
-    if (!user || user.role !== 'CUSTOMER') {
-      return res.status(404).json({ message: 'Không tìm thấy tài khoản khách hàng' });
+    const { id } = req.params;
+    const { fullName, email, phoneNumber, gender, birthday, avatar, status } = req.body;
+    
+    // Tìm tài khoản khách hàng cần cập nhật
+    const customerAccount = await User.findOne({ _id: id, role: 'CUSTOMER' });
+    
+    if (!customerAccount) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy tài khoản khách hàng'
+      });
     }
-
-    const validatedData = validateAddress(req.body);
-    user.addresses.push(validatedData);
-    await user.save();
-
-    res.json(user.addresses);
+    
+    // Kiểm tra email hoặc số điện thoại đã tồn tại
+    if (email && email !== customerAccount.email) {
+      const existingEmailAccount = await User.findOne({ email });
+      if (existingEmailAccount) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email đã được sử dụng'
+        });
+      }
+    }
+    
+    if (phoneNumber && phoneNumber !== customerAccount.phoneNumber) {
+      const existingPhoneAccount = await User.findOne({ phoneNumber });
+      if (existingPhoneAccount) {
+        return res.status(400).json({
+          success: false,
+          message: 'Số điện thoại đã được sử dụng'
+        });
+      }
+    }
+    
+    // Cập nhật thông tin
+    if (fullName) customerAccount.fullName = fullName;
+    if (email) customerAccount.email = email;
+    if (phoneNumber) customerAccount.phoneNumber = phoneNumber;
+    if (gender !== undefined) customerAccount.gender = gender;
+    if (birthday) customerAccount.birthday = birthday;
+    if (avatar) customerAccount.avatar = avatar;
+    if (status) customerAccount.status = status;
+    
+    await customerAccount.save();
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Cập nhật tài khoản khách hàng thành công',
+      data: {
+        _id: customerAccount._id,
+        fullName: customerAccount.fullName,
+        email: customerAccount.email,
+        phoneNumber: customerAccount.phoneNumber,
+        role: customerAccount.role,
+        status: customerAccount.status
+      }
+    });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    return res.status(500).json({
+      success: false,
+      message: 'Đã xảy ra lỗi khi cập nhật tài khoản khách hàng',
+      error: error.message
+    });
   }
 };
 
-exports.updateCustomerAddress = async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id);
-    if (!user || user.role !== 'CUSTOMER') {
-      return res.status(404).json({ message: 'Không tìm thấy tài khoản khách hàng' });
-    }
-
-    const address = user.addresses.id(req.params.addressId);
-    if (!address) {
-      return res.status(404).json({ message: 'Không tìm thấy địa chỉ' });
-    }
-
-    const validatedData = validateAddress(req.body);
-    Object.assign(address, validatedData);
-    await user.save();
-
-    res.json(user.addresses);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-};
-
-exports.deleteCustomerAddress = async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id);
-    if (!user || user.role !== 'CUSTOMER') {
-      return res.status(404).json({ message: 'Không tìm thấy tài khoản khách hàng' });
-    }
-
-    user.addresses.pull(req.params.addressId);
-    await user.save();
-
-    res.json(user.addresses);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-};
-
-// Quản lý hồ sơ cá nhân
-exports.getProfile = async (req, res) => {
+// Lấy thông tin cá nhân người dùng đang đăng nhập
+export const getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-password');
-    res.json(user);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-};
-
-exports.updateProfile = async (req, res) => {
-  try {
-    const validatedData = validateUser(req.body);
-    const user = await User.findById(req.user._id);
-
-    // Không cho phép thay đổi role qua API này
-    delete validatedData.role;
     
-    Object.assign(user, validatedData);
-    await user.save();
-    
-    const userResponse = user.toObject();
-    delete userResponse.password;
-    
-    res.json(userResponse);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-};
-
-exports.changePassword = async (req, res) => {
-  try {
-    const { currentPassword, newPassword } = validatePassword(req.body);
-    const user = await User.findById(req.user._id);
-
-    const isMatch = await comparePassword(currentPassword, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Mật khẩu hiện tại không đúng' });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy người dùng'
+      });
     }
-
-    user.password = await hashPassword(newPassword);
-    await user.save();
-
-    res.json({ message: 'Đã thay đổi mật khẩu thành công' });
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Lấy thông tin cá nhân thành công',
+      data: user
+    });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    return res.status(500).json({
+      success: false,
+      message: 'Đã xảy ra lỗi khi lấy thông tin cá nhân',
+      error: error.message
+    });
+  }
+};
+
+// Cập nhật thông tin cá nhân người dùng đang đăng nhập
+export const updateProfile = async (req, res) => {
+  try {
+    const { fullName, phoneNumber, gender, birthday, avatar } = req.body;
+    
+    const user = await User.findById(req.user._id);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy người dùng'
+      });
+    }
+    
+    // Cập nhật thông tin
+    if (fullName) user.fullName = fullName;
+    if (phoneNumber && phoneNumber !== user.phoneNumber) {
+      // Kiểm tra số điện thoại đã tồn tại chưa
+      const existingPhoneAccount = await User.findOne({ phoneNumber });
+      if (existingPhoneAccount) {
+        return res.status(400).json({
+          success: false,
+          message: 'Số điện thoại đã được sử dụng'
+        });
+      }
+      user.phoneNumber = phoneNumber;
+    }
+    if (gender !== undefined) user.gender = gender;
+    if (birthday) user.birthday = birthday;
+    if (avatar) user.avatar = avatar;
+    
+    await user.save();
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Cập nhật thông tin cá nhân thành công',
+      data: {
+        _id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        role: user.role,
+        gender: user.gender,
+        birthday: user.birthday,
+        avatar: user.avatar
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Đã xảy ra lỗi khi cập nhật thông tin cá nhân',
+      error: error.message
+    });
+  }
+};
+
+// Đổi mật khẩu người dùng đang đăng nhập
+export const changePassword = async (req, res) => {
+  try {
+    const passwordData = validatePassword(req.body);
+    
+    const user = await User.findById(req.user._id);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy người dùng'
+      });
+    }
+    
+    // Kiểm tra mật khẩu hiện tại
+    const isMatch = await comparePassword(passwordData.currentPassword, user.password);
+    
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: 'Mật khẩu hiện tại không chính xác'
+      });
+    }
+    
+    // Mã hóa mật khẩu mới
+    const hashedPassword = await hashPassword(passwordData.newPassword);
+    
+    // Cập nhật mật khẩu
+    user.password = hashedPassword;
+    await user.save();
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Đổi mật khẩu thành công'
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Đã xảy ra lỗi khi đổi mật khẩu',
+      error: error.message
+    });
   }
 }; 

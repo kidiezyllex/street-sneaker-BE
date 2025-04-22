@@ -326,7 +326,8 @@ router.delete('/orders/:id/items/:itemId', protect, staff, removeOrderItem);
  *                 minimum: 0
  *               method:
  *                 type: string
- *                 description: Phương thức thanh toán (ví dụ: Cash, Card, Transfer)
+ *                 enum: [Cash, Card, Transfer]
+ *                 description: Phương thức thanh toán
  *     responses:
  *       200:
  *         description: Thanh toán được xử lý thành công

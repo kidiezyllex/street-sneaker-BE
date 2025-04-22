@@ -11,7 +11,8 @@ import {
   deleteBillDetail,
   getCustomerBills,
   processBillReturn,
-  searchBill
+  searchBill,
+  deleteBill
 } from '../controllers/bill.controller.js';
 import { protect, staff } from '../middlewares/auth.middleware.js';
 

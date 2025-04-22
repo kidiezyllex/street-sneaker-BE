@@ -955,4 +955,46 @@ export const processBillReturn = async (req, res) => {
       error: error.message
     });
   }
+};
+
+/**
+ * Xóa đơn hàng
+ * @route DELETE /api/bills/:id
+ * @access Private (Admin, Staff)
+ */
+export const deleteBill = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const bill = await Bill.findById(id);
+    
+    if (!bill) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy đơn hàng'
+      });
+    }
+    
+    // Kiểm tra trạng thái - chỉ cho phép xóa đơn hàng ở trạng thái mới
+    if (bill.status !== 'CHO_XAC_NHAN') {
+      return res.status(400).json({
+        success: false,
+        message: 'Không thể xóa đơn hàng đã được xử lý hoặc hoàn thành'
+      });
+    }
+    
+    // Thực hiện xóa
+    await Bill.findByIdAndDelete(id);
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Xóa đơn hàng thành công'
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Đã xảy ra lỗi khi xóa đơn hàng',
+      error: error.message
+    });
+  }
 }; 

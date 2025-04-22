@@ -9,9 +9,9 @@ import {
   getCustomerAccounts,
   getCustomerAccountById,
   updateCustomerAccount,
-  addCustomerAddress,
-  updateCustomerAddress,
-  deleteCustomerAddress,
+  addAddress,
+  updateAddress,
+  deleteAddress,
   getProfile,
   updateProfile,
   changePassword
@@ -310,7 +310,7 @@ router.put('/customers/:id', protect, updateCustomerAccount);
  *       401:
  *         description: Không được phép
  */
-router.post('/customers/:id/addresses', protect, addCustomerAddress);
+router.post('/customers/:id/addresses', protect, addAddress);
 
 /**
  * @swagger
@@ -348,7 +348,7 @@ router.post('/customers/:id/addresses', protect, addCustomerAddress);
  *       401:
  *         description: Không được phép
  */
-router.put('/customers/:id/addresses/:addressId', protect, updateCustomerAddress);
+router.put('/customers/:id/addresses/:addressId', protect, updateAddress);
 
 /**
  * @swagger
@@ -379,7 +379,7 @@ router.put('/customers/:id/addresses/:addressId', protect, updateCustomerAddress
  *       401:
  *         description: Không được phép
  */
-router.delete('/customers/:id/addresses/:addressId', protect, deleteCustomerAddress);
+router.delete('/customers/:id/addresses/:addressId', protect, deleteAddress);
 
 /**
  * @swagger
