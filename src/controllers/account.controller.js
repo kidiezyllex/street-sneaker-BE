@@ -1,8 +1,6 @@
-import User from '../models/user.model.js';
-import { validateUser, validateAddress, validatePassword } from '../utils/validation.js';
+import Account from '../models/account.model.js';
+import { validatePassword } from '../utils/validation.js';
 import { hashPassword, comparePassword } from '../utils/auth.js';
-import { scanIdCard } from '../utils/scanner.js';
-
 // Lấy danh sách tất cả tài khoản
 export const getAllAccounts = async (req, res) => {
   try {
@@ -140,25 +138,6 @@ export const createAccount = async (req, res) => {
       message: 'Đã xảy ra lỗi khi tạo tài khoản',
       error: error.message
     });
-  }
-};
-
-// Tạo tài khoản nhân viên (chỉ dành cho admin)
-export const createStaffAccount = async (req, res) => {
-  try {
-    const validatedData = validateUser(req.body);
-    const hashedPassword = await hashPassword(validatedData.password);
-
-    const user = new User({
-      ...validatedData,
-      password: hashedPassword,
-      role: 'STAFF'
-    });
-
-    await user.save();
-    res.status(201).json(user);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
   }
 };
 
@@ -489,363 +468,22 @@ export const deleteAddress = async (req, res) => {
   }
 };
 
-// Lấy danh sách tài khoản nhân viên
-export const getStaffAccounts = async (req, res) => {
-  try {
-    const { page = 1, limit = 10, status } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    
-    // Xây dựng query
-    const query = { role: 'STAFF' };
-    if (status) query.status = status;
-    
-    // Thực hiện truy vấn với phân trang
-    const total = await User.countDocuments(query);
-    const staffAccounts = await User.find(query)
-      .select('-password')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(parseInt(limit));
-    
-    return res.status(200).json({
-      success: true,
-      message: 'Lấy danh sách tài khoản nhân viên thành công',
-      data: {
-        accounts: staffAccounts,
-        pagination: {
-          totalItems: total,
-          totalPages: Math.ceil(total / parseInt(limit)),
-          currentPage: parseInt(page),
-          limit: parseInt(limit)
-        }
-      }
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Đã xảy ra lỗi khi lấy danh sách tài khoản nhân viên',
-      error: error.message
-    });
-  }
-};
-
-// Lấy thông tin chi tiết tài khoản nhân viên
-export const getStaffAccountById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    const staffAccount = await User.findOne({ _id: id, role: 'STAFF' }).select('-password');
-    
-    if (!staffAccount) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy tài khoản nhân viên'
-      });
-    }
-    
-    return res.status(200).json({
-      success: true,
-      message: 'Lấy thông tin tài khoản nhân viên thành công',
-      data: staffAccount
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Đã xảy ra lỗi khi lấy thông tin tài khoản nhân viên',
-      error: error.message
-    });
-  }
-};
-
-// Cập nhật tài khoản nhân viên
-export const updateStaffAccount = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { fullName, email, phoneNumber, status } = req.body;
-    
-    // Tìm tài khoản nhân viên cần cập nhật
-    const staffAccount = await User.findOne({ _id: id, role: 'STAFF' });
-    
-    if (!staffAccount) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy tài khoản nhân viên'
-      });
-    }
-    
-    // Kiểm tra email hoặc số điện thoại đã tồn tại
-    if (email && email !== staffAccount.email) {
-      const existingEmailAccount = await User.findOne({ email });
-      if (existingEmailAccount) {
-        return res.status(400).json({
-          success: false,
-          message: 'Email đã được sử dụng'
-        });
-      }
-    }
-    
-    if (phoneNumber && phoneNumber !== staffAccount.phoneNumber) {
-      const existingPhoneAccount = await User.findOne({ phoneNumber });
-      if (existingPhoneAccount) {
-        return res.status(400).json({
-          success: false,
-          message: 'Số điện thoại đã được sử dụng'
-        });
-      }
-    }
-    
-    // Cập nhật thông tin
-    if (fullName) staffAccount.fullName = fullName;
-    if (email) staffAccount.email = email;
-    if (phoneNumber) staffAccount.phoneNumber = phoneNumber;
-    if (status) staffAccount.status = status;
-    
-    await staffAccount.save();
-    
-    return res.status(200).json({
-      success: true,
-      message: 'Cập nhật tài khoản nhân viên thành công',
-      data: {
-        _id: staffAccount._id,
-        fullName: staffAccount.fullName,
-        email: staffAccount.email,
-        phoneNumber: staffAccount.phoneNumber,
-        role: staffAccount.role,
-        status: staffAccount.status
-      }
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Đã xảy ra lỗi khi cập nhật tài khoản nhân viên',
-      error: error.message
-    });
-  }
-};
-
-// Xóa tài khoản nhân viên
-export const deleteStaffAccount = async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    const staffAccount = await User.findOneAndDelete({ _id: id, role: 'STAFF' });
-    
-    if (!staffAccount) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy tài khoản nhân viên'
-      });
-    }
-    
-    return res.status(200).json({
-      success: true,
-      message: 'Xóa tài khoản nhân viên thành công'
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Đã xảy ra lỗi khi xóa tài khoản nhân viên',
-      error: error.message
-    });
-  }
-};
-
-// Quét CCCD/CMND nhân viên
-export const scanStaffId = async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: 'Vui lòng tải lên hình ảnh CCCD/CMND'
-      });
-    }
-    
-    // Sử dụng hàm scanIdCard từ utils/scanner.js
-    const result = await scanIdCard(req.file.buffer);
-    
-    if (!result.success) {
-      return res.status(400).json({
-        success: false,
-        message: 'Không thể nhận dạng CCCD/CMND',
-        error: result.error
-      });
-    }
-    
-    return res.status(200).json({
-      success: true,
-      message: 'Quét CCCD/CMND thành công',
-      data: result.data
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Đã xảy ra lỗi khi quét CCCD/CMND',
-      error: error.message
-    });
-  }
-};
-
-// Lấy danh sách tài khoản khách hàng
-export const getCustomerAccounts = async (req, res) => {
-  try {
-    const { page = 1, limit = 10, status, search } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    
-    // Xây dựng query
-    const query = { role: 'CUSTOMER' };
-    if (status) query.status = status;
-    
-    if (search) {
-      query.$or = [
-        { fullName: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { phoneNumber: { $regex: search, $options: 'i' } }
-      ];
-    }
-    
-    // Thực hiện truy vấn với phân trang
-    const total = await User.countDocuments(query);
-    const customerAccounts = await User.find(query)
-      .select('-password')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(parseInt(limit));
-    
-    return res.status(200).json({
-      success: true,
-      message: 'Lấy danh sách tài khoản khách hàng thành công',
-      data: {
-        accounts: customerAccounts,
-        pagination: {
-          totalItems: total,
-          totalPages: Math.ceil(total / parseInt(limit)),
-          currentPage: parseInt(page),
-          limit: parseInt(limit)
-        }
-      }
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Đã xảy ra lỗi khi lấy danh sách tài khoản khách hàng',
-      error: error.message
-    });
-  }
-};
-
-// Lấy thông tin chi tiết tài khoản khách hàng
-export const getCustomerAccountById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    const customerAccount = await User.findOne({ _id: id, role: 'CUSTOMER' }).select('-password');
-    
-    if (!customerAccount) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy tài khoản khách hàng'
-      });
-    }
-    
-    return res.status(200).json({
-      success: true,
-      message: 'Lấy thông tin tài khoản khách hàng thành công',
-      data: customerAccount
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Đã xảy ra lỗi khi lấy thông tin tài khoản khách hàng',
-      error: error.message
-    });
-  }
-};
-
-// Cập nhật tài khoản khách hàng
-export const updateCustomerAccount = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { fullName, email, phoneNumber, gender, birthday, avatar, status } = req.body;
-    
-    // Tìm tài khoản khách hàng cần cập nhật
-    const customerAccount = await User.findOne({ _id: id, role: 'CUSTOMER' });
-    
-    if (!customerAccount) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy tài khoản khách hàng'
-      });
-    }
-    
-    // Kiểm tra email hoặc số điện thoại đã tồn tại
-    if (email && email !== customerAccount.email) {
-      const existingEmailAccount = await User.findOne({ email });
-      if (existingEmailAccount) {
-        return res.status(400).json({
-          success: false,
-          message: 'Email đã được sử dụng'
-        });
-      }
-    }
-    
-    if (phoneNumber && phoneNumber !== customerAccount.phoneNumber) {
-      const existingPhoneAccount = await User.findOne({ phoneNumber });
-      if (existingPhoneAccount) {
-        return res.status(400).json({
-          success: false,
-          message: 'Số điện thoại đã được sử dụng'
-        });
-      }
-    }
-    
-    // Cập nhật thông tin
-    if (fullName) customerAccount.fullName = fullName;
-    if (email) customerAccount.email = email;
-    if (phoneNumber) customerAccount.phoneNumber = phoneNumber;
-    if (gender !== undefined) customerAccount.gender = gender;
-    if (birthday) customerAccount.birthday = birthday;
-    if (avatar) customerAccount.avatar = avatar;
-    if (status) customerAccount.status = status;
-    
-    await customerAccount.save();
-    
-    return res.status(200).json({
-      success: true,
-      message: 'Cập nhật tài khoản khách hàng thành công',
-      data: {
-        _id: customerAccount._id,
-        fullName: customerAccount.fullName,
-        email: customerAccount.email,
-        phoneNumber: customerAccount.phoneNumber,
-        role: customerAccount.role,
-        status: customerAccount.status
-      }
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Đã xảy ra lỗi khi cập nhật tài khoản khách hàng',
-      error: error.message
-    });
-  }
-};
-
 // Lấy thông tin cá nhân người dùng đang đăng nhập
 export const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select('-password');
+    const account = await Account.findById(req.account._id).select('-password');
     
-    if (!user) {
+    if (!account) {
       return res.status(404).json({
         success: false,
-        message: 'Không tìm thấy người dùng'
+        message: 'Không tìm thấy tài khoản'
       });
     }
     
     return res.status(200).json({
       success: true,
       message: 'Lấy thông tin cá nhân thành công',
-      data: user
+      data: account
     });
   } catch (error) {
     return res.status(500).json({
@@ -861,46 +499,46 @@ export const updateProfile = async (req, res) => {
   try {
     const { fullName, phoneNumber, gender, birthday, avatar } = req.body;
     
-    const user = await User.findById(req.user._id);
+    const account = await Account.findById(req.account._id);
     
-    if (!user) {
+    if (!account) {
       return res.status(404).json({
         success: false,
-        message: 'Không tìm thấy người dùng'
+        message: 'Không tìm thấy tài khoản'
       });
     }
     
     // Cập nhật thông tin
-    if (fullName) user.fullName = fullName;
-    if (phoneNumber && phoneNumber !== user.phoneNumber) {
+    if (fullName) account.fullName = fullName;
+    if (phoneNumber && phoneNumber !== account.phoneNumber) {
       // Kiểm tra số điện thoại đã tồn tại chưa
-      const existingPhoneAccount = await User.findOne({ phoneNumber });
+      const existingPhoneAccount = await Account.findOne({ phoneNumber });
       if (existingPhoneAccount) {
         return res.status(400).json({
           success: false,
           message: 'Số điện thoại đã được sử dụng'
         });
       }
-      user.phoneNumber = phoneNumber;
+      account.phoneNumber = phoneNumber;
     }
-    if (gender !== undefined) user.gender = gender;
-    if (birthday) user.birthday = birthday;
-    if (avatar) user.avatar = avatar;
+    if (gender !== undefined) account.gender = gender;
+    if (birthday) account.birthday = birthday;
+    if (avatar) account.avatar = avatar;
     
-    await user.save();
+    await account.save();
     
     return res.status(200).json({
       success: true,
       message: 'Cập nhật thông tin cá nhân thành công',
       data: {
-        _id: user._id,
-        fullName: user.fullName,
-        email: user.email,
-        phoneNumber: user.phoneNumber,
-        role: user.role,
-        gender: user.gender,
-        birthday: user.birthday,
-        avatar: user.avatar
+        _id: account._id,
+        fullName: account.fullName,
+        email: account.email,
+        phoneNumber: account.phoneNumber,
+        role: account.role,
+        gender: account.gender,
+        birthday: account.birthday,
+        avatar: account.avatar
       }
     });
   } catch (error) {
@@ -917,17 +555,17 @@ export const changePassword = async (req, res) => {
   try {
     const passwordData = validatePassword(req.body);
     
-    const user = await User.findById(req.user._id);
+    const account = await Account.findById(req.account._id);
     
-    if (!user) {
+    if (!account) {
       return res.status(404).json({
         success: false,
-        message: 'Không tìm thấy người dùng'
+        message: 'Không tìm thấy tài khoản'
       });
     }
     
     // Kiểm tra mật khẩu hiện tại
-    const isMatch = await comparePassword(passwordData.currentPassword, user.password);
+    const isMatch = await comparePassword(passwordData.currentPassword, account.password);
     
     if (!isMatch) {
       return res.status(400).json({
@@ -940,8 +578,8 @@ export const changePassword = async (req, res) => {
     const hashedPassword = await hashPassword(passwordData.newPassword);
     
     // Cập nhật mật khẩu
-    user.password = hashedPassword;
-    await user.save();
+    account.password = hashedPassword;
+    await account.save();
     
     return res.status(200).json({
       success: true,

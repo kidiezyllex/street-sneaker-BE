@@ -1,14 +1,11 @@
 import express from 'express';
 import {
-  createStaffAccount,
-  getStaffAccounts,
-  getStaffAccountById,
-  updateStaffAccount,
-  deleteStaffAccount,
-  scanStaffId,
-  getCustomerAccounts,
-  getCustomerAccountById,
-  updateCustomerAccount,
+  getAllAccounts,
+  getAccountById,
+  createAccount,
+  updateAccount,
+  updateAccountStatus,
+  deleteAccount,
   addAddress,
   updateAddress,
   deleteAddress,
@@ -22,38 +19,28 @@ const router = express.Router();
 
 /**
  * @swagger
- * /account/staff:
- *   post:
- *     summary: Tạo tài khoản nhân viên
- *     tags: [Account]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             # Thêm các trường cần thiết cho nhân viên
- *     responses:
- *       201:
- *         description: Tạo tài khoản nhân viên thành công
- *       400:
- *         description: Lỗi dữ liệu đầu vào
- *       401:
- *         description: Không được phép
- */
-router.post('/staff', protect, admin, createStaffAccount);
-
-/**
- * @swagger
- * /account/staff:
+ * /account:
  *   get:
- *     summary: Lấy danh sách tài khoản nhân viên
- *     tags: [Account]
+ *     summary: Lấy danh sách tất cả tài khoản (Admin)
+ *     tags: [Account (Admin)]
  *     security:
  *       - bearerAuth: []
  *     parameters:
+ *       - in: query
+ *         name: role
+ *         schema:
+ *           type: string
+ *         description: "Lọc theo vai trò (ADMIN, STAFF, CUSTOMER)"
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *         description: "Lọc theo trạng thái (HOAT_DONG, KHONG_HOAT_DONG)"
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: "Tìm kiếm theo tên, email, số điện thoại, mã tài khoản"
  *       - in: query
  *         name: page
  *         schema:
@@ -66,25 +53,22 @@ router.post('/staff', protect, admin, createStaffAccount);
  *           type: integer
  *           default: 10
  *         description: Số lượng trên mỗi trang
- *       - in: query
- *         name: status
- *         schema:
- *           type: string
- *         description: Lọc theo trạng thái
  *     responses:
  *       200:
- *         description: Danh sách tài khoản nhân viên
+ *         description: Danh sách tài khoản
  *       401:
- *         description: Không được phép
+ *         description: "Không được phép (Không phải Admin)"
+ *       500:
+ *         description: "Lỗi máy chủ"
  */
-router.get('/staff', protect, admin, getStaffAccounts);
+router.get('/', protect, admin, getAllAccounts);
 
 /**
  * @swagger
- * /account/staff/{id}:
+ * /account/{id}:
  *   get:
- *     summary: Lấy thông tin tài khoản nhân viên theo ID
- *     tags: [Account]
+ *     summary: Lấy thông tin chi tiết tài khoản theo ID (Admin)
+ *     tags: [Account (Admin)]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -93,23 +77,25 @@ router.get('/staff', protect, admin, getStaffAccounts);
  *         schema:
  *           type: string
  *         required: true
- *         description: ID tài khoản nhân viên
+ *         description: ID tài khoản
  *     responses:
  *       200:
- *         description: Thông tin tài khoản nhân viên
- *       404:
- *         description: Không tìm thấy tài khoản
+ *         description: Thông tin chi tiết tài khoản
  *       401:
- *         description: Không được phép
+ *         description: "Không được phép (Không phải Admin)"
+ *       404:
+ *         description: "Không tìm thấy tài khoản"
+ *       500:
+ *         description: "Lỗi máy chủ"
  */
-router.get('/staff/:id', protect, admin, getStaffAccountById);
+router.get('/:id', protect, admin, getAccountById);
 
 /**
  * @swagger
- * /account/staff/{id}:
+ * /account/{id}:
  *   put:
- *     summary: Cập nhật tài khoản nhân viên
- *     tags: [Account]
+ *     summary: Cập nhật thông tin tài khoản bởi Admin
+ *     tags: [Account (Admin)]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -118,142 +104,63 @@ router.get('/staff/:id', protect, admin, getStaffAccountById);
  *         schema:
  *           type: string
  *         required: true
- *         description: ID tài khoản nhân viên
+ *         description: ID tài khoản cần cập nhật
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
- *           schema:
- *             type: object
- *             # Thêm các trường cần cập nhật
- *     responses:
- *       200:
- *         description: Cập nhật tài khoản nhân viên thành công
- *       404:
- *         description: Không tìm thấy tài khoản
- *       401:
- *         description: Không được phép
- */
-router.put('/staff/:id', protect, admin, updateStaffAccount);
-
-/**
- * @swagger
- * /account/staff/{id}:
- *   delete:
- *     summary: Xóa tài khoản nhân viên
- *     tags: [Account]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: string
- *         required: true
- *         description: ID tài khoản nhân viên
- *     responses:
- *       200:
- *         description: Xóa tài khoản nhân viên thành công
- *       404:
- *         description: Không tìm thấy tài khoản
- *       401:
- *         description: Không được phép
- */
-router.delete('/staff/:id', protect, admin, deleteStaffAccount);
-
-/**
- * @swagger
- * /account/staff/scan-id:
- *   post:
- *     summary: Quét CCCD/CMND nhân viên
- *     tags: [Account]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
- *               image:
+ *               fullName:
  *                 type: string
- *                 format: binary
+ *               email:
+ *                 type: string
+ *               phoneNumber:
+ *                 type: string
+ *               gender:
+ *                 type: string
+ *                 enum: [Nam, Nữ, Khác]
+ *               birthday:
+ *                 type: string
+ *                 format: date
+ *               citizenId:
+ *                 type: string
+ *               avatar:
+ *                 type: string
+ *                 format: url
+ *               status:
+ *                 type: string
+ *                 enum: [HOAT_DONG, KHONG_HOAT_DONG]
+ *             example:
+ *               fullName: "Admin Cập Nhật"
+ *               email: "updated.email@example.com"
+ *               phoneNumber: "0987654322"
+ *               gender: "Nữ"
+ *               birthday: "1995-05-15"
+ *               citizenId: "987654321012"
+ *               avatar: "https://example.com/avatar_updated.jpg"
+ *               status: "HOAT_DONG"
  *     responses:
  *       200:
- *         description: Thông tin nhân viên từ CCCD/CMND
+ *         description: "Cập nhật tài khoản thành công"
  *       400:
- *         description: Lỗi dữ liệu đầu vào
+ *         description: "Dữ liệu không hợp lệ (vd: email/sđt đã tồn tại)"
  *       401:
- *         description: Không được phép
- */
-router.post('/staff/scan-id', protect, admin, scanStaffId);
-
-/**
- * @swagger
- * /account/customers:
- *   get:
- *     summary: Lấy danh sách tài khoản khách hàng
- *     tags: [Account]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *           default: 1
- *         description: Số trang
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 10
- *         description: Số lượng trên mỗi trang
- *       - in: query
- *         name: status
- *         schema:
- *           type: string
- *         description: Lọc theo trạng thái
- *     responses:
- *       200:
- *         description: Danh sách tài khoản khách hàng
- *       401:
- *         description: Không được phép
- */
-router.get('/customers', protect, getCustomerAccounts);
-
-/**
- * @swagger
- * /account/customers/{id}:
- *   get:
- *     summary: Lấy thông tin tài khoản khách hàng theo ID
- *     tags: [Account]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: string
- *         required: true
- *         description: ID tài khoản khách hàng
- *     responses:
- *       200:
- *         description: Thông tin tài khoản khách hàng
+ *         description: "Không được phép (Không phải Admin)"
  *       404:
- *         description: Không tìm thấy tài khoản
- *       401:
- *         description: Không được phép
+ *         description: "Không tìm thấy tài khoản"
+ *       500:
+ *         description: "Lỗi máy chủ"
  */
-router.get('/customers/:id', protect, getCustomerAccountById);
+router.put('/:id', protect, admin, updateAccount);
 
 /**
  * @swagger
- * /account/customers/{id}:
+ * /account/{id}/status:
  *   put:
- *     summary: Cập nhật tài khoản khách hàng
- *     tags: [Account]
+ *     summary: Cập nhật trạng thái tài khoản (kích hoạt/vô hiệu hóa) (Admin)
+ *     tags: [Account (Admin)]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -262,100 +169,42 @@ router.get('/customers/:id', protect, getCustomerAccountById);
  *         schema:
  *           type: string
  *         required: true
- *         description: ID tài khoản khách hàng
+ *         description: ID tài khoản
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             # Thêm các trường cần cập nhật
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [HOAT_DONG, KHONG_HOAT_DONG]
+ *                 required: true
+ *             example:
+ *               status: "KHONG_HOAT_DONG"
  *     responses:
  *       200:
- *         description: Cập nhật tài khoản khách hàng thành công
- *       404:
- *         description: Không tìm thấy tài khoản
+ *         description: "Cập nhật trạng thái thành công"
+ *       400:
+ *         description: "Trạng thái không hợp lệ hoặc thiếu"
  *       401:
- *         description: Không được phép
+ *         description: "Không được phép (Không phải Admin)"
+ *       403:
+ *         description: "Không thể vô hiệu hóa tài khoản Admin chính"
+ *       404:
+ *         description: "Không tìm thấy tài khoản"
+ *       500:
+ *         description: "Lỗi máy chủ"
  */
-router.put('/customers/:id', protect, updateCustomerAccount);
+router.put('/:id/status', protect, admin, updateAccountStatus);
 
 /**
  * @swagger
- * /account/customers/{id}/addresses:
- *   post:
- *     summary: Thêm địa chỉ cho khách hàng
- *     tags: [Account]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: string
- *         required: true
- *         description: ID tài khoản khách hàng
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             # Thêm các trường địa chỉ
- *     responses:
- *       200:
- *         description: Thêm địa chỉ thành công
- *       404:
- *         description: Không tìm thấy tài khoản
- *       401:
- *         description: Không được phép
- */
-router.post('/customers/:id/addresses', protect, addAddress);
-
-/**
- * @swagger
- * /account/customers/{id}/addresses/{addressId}:
- *   put:
- *     summary: Cập nhật địa chỉ khách hàng
- *     tags: [Account]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: string
- *         required: true
- *         description: ID tài khoản khách hàng
- *       - in: path
- *         name: addressId
- *         schema:
- *           type: string
- *         required: true
- *         description: ID địa chỉ
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             # Thêm các trường địa chỉ
- *     responses:
- *       200:
- *         description: Cập nhật địa chỉ thành công
- *       404:
- *         description: Không tìm thấy tài khoản hoặc địa chỉ
- *       401:
- *         description: Không được phép
- */
-router.put('/customers/:id/addresses/:addressId', protect, updateAddress);
-
-/**
- * @swagger
- * /account/customers/{id}/addresses/{addressId}:
+ * /account/{id}:
  *   delete:
- *     summary: Xóa địa chỉ khách hàng
- *     tags: [Account]
+ *     summary: Xóa tài khoản (Admin)
+ *     tags: [Account (Admin)]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -364,36 +213,94 @@ router.put('/customers/:id/addresses/:addressId', protect, updateAddress);
  *         schema:
  *           type: string
  *         required: true
- *         description: ID tài khoản khách hàng
- *       - in: path
- *         name: addressId
- *         schema:
- *           type: string
- *         required: true
- *         description: ID địa chỉ
+ *         description: ID tài khoản cần xóa
  *     responses:
  *       200:
- *         description: Xóa địa chỉ thành công
- *       404:
- *         description: Không tìm thấy tài khoản hoặc địa chỉ
+ *         description: "Xóa tài khoản thành công"
  *       401:
- *         description: Không được phép
+ *         description: "Không được phép (Không phải Admin)"
+ *       403:
+ *         description: "Không thể xóa tài khoản Admin chính"
+ *       404:
+ *         description: "Không tìm thấy tài khoản"
+ *       500:
+ *         description: "Lỗi máy chủ"
  */
-router.delete('/customers/:id/addresses/:addressId', protect, deleteAddress);
+router.delete('/:id', protect, admin, deleteAccount);
+
+/**
+ * @swagger
+ * /account/register:
+ *   post:
+ *     summary: Tạo tài khoản mới (Đăng ký)
+ *     tags: [Account (Public)]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               fullName:
+ *                 type: string
+ *                 required: true
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 required: true
+ *               password:
+ *                 type: string
+ *                 required: true
+ *               phoneNumber:
+ *                 type: string
+ *                 required: true
+ *               role:
+ *                 type: string
+ *                 enum: [CUSTOMER, STAFF, ADMIN]
+ *                 default: CUSTOMER
+ *               gender:
+ *                 type: string
+ *                 enum: [Nam, Nữ, Khác]
+ *               birthday:
+ *                 type: string
+ *                 format: date
+ *               citizenId:
+ *                  type: string
+ *             example:
+ *               fullName: "Người Dùng Mới"
+ *               email: "newuser@example.com"
+ *               password: "password123"
+ *               phoneNumber: "0123456789"
+ *               gender: "Nam"
+ *               birthday: "2000-01-01"
+ *               citizenId: "123456789012"
+ *     responses:
+ *       201:
+ *         description: Tạo tài khoản thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ hoặc Email/SĐT đã được sử dụng
+ *       500:
+ *         description: Lỗi máy chủ
+ */
+router.post('/register', createAccount);
 
 /**
  * @swagger
  * /account/profile:
  *   get:
- *     summary: Lấy hồ sơ cá nhân
- *     tags: [Account]
+ *     summary: Lấy hồ sơ cá nhân của người dùng đang đăng nhập
+ *     tags: [Account (User)]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Lấy hồ sơ thành công
  *       401:
- *         description: Không được phép
+ *         description: "Không được phép (Chưa đăng nhập)"
+ *       404:
+ *         description: "Không tìm thấy tài khoản"
+ *       500:
+ *         description: "Lỗi máy chủ"
  */
 router.get('/profile', protect, getProfile);
 
@@ -401,8 +308,8 @@ router.get('/profile', protect, getProfile);
  * @swagger
  * /account/profile:
  *   put:
- *     summary: Cập nhật hồ sơ cá nhân
- *     tags: [Account]
+ *     summary: Cập nhật hồ sơ cá nhân của người dùng đang đăng nhập
+ *     tags: [Account (User)]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -411,12 +318,37 @@ router.get('/profile', protect, getProfile);
  *         application/json:
  *           schema:
  *             type: object
- *             # Thêm các trường cần cập nhật
+ *             properties:
+ *               fullName:
+ *                 type: string
+ *               phoneNumber:
+ *                 type: string
+ *               gender:
+ *                 type: string
+ *                 enum: [Nam, Nữ, Khác]
+ *               birthday:
+ *                 type: string
+ *                 format: date
+ *               avatar:
+ *                 type: string
+ *                 format: url
+ *             example:
+ *               fullName: "Người Dùng Cập Nhật"
+ *               phoneNumber: "0999888777"
+ *               gender: "Khác"
+ *               birthday: "1999-12-31"
+ *               avatar: "https://example.com/new_avatar.jpg"
  *     responses:
  *       200:
- *         description: Cập nhật hồ sơ thành công
+ *         description: "Cập nhật hồ sơ thành công"
+ *       400:
+ *         description: "Dữ liệu không hợp lệ (vd: SĐT đã tồn tại)"
  *       401:
- *         description: Không được phép
+ *         description: "Không được phép (Chưa đăng nhập)"
+ *       404:
+ *         description: "Không tìm thấy tài khoản"
+ *       500:
+ *         description: "Lỗi máy chủ"
  */
 router.put('/profile', protect, updateProfile);
 
@@ -424,8 +356,8 @@ router.put('/profile', protect, updateProfile);
  * @swagger
  * /account/profile/password:
  *   put:
- *     summary: Đổi mật khẩu
- *     tags: [Account]
+ *     summary: Đổi mật khẩu của người dùng đang đăng nhập
+ *     tags: [Account (User)]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -437,16 +369,186 @@ router.put('/profile', protect, updateProfile);
  *             properties:
  *               currentPassword:
  *                 type: string
+ *                 required: true
  *               newPassword:
  *                 type: string
+ *                 required: true
+ *               confirmPassword:
+ *                 type: string
+ *                 required: true
+ *             example:
+ *               currentPassword: "password123"
+ *               newPassword: "newPassword456"
+ *               confirmPassword: "newPassword456"
  *     responses:
  *       200:
- *         description: Đổi mật khẩu thành công
+ *         description: "Đổi mật khẩu thành công"
  *       400:
- *         description: Lỗi dữ liệu đầu vào
+ *         description: "Lỗi dữ liệu đầu vào (vd: mật khẩu hiện tại sai, mật khẩu mới không khớp)"
  *       401:
- *         description: Không được phép
+ *         description: "Không được phép (Chưa đăng nhập)"
+ *       404:
+ *         description: "Không tìm thấy tài khoản"
+ *       500:
+ *         description: "Lỗi máy chủ"
  */
 router.put('/profile/password', protect, changePassword);
+
+/**
+ * @swagger
+ * /account/profile/addresses:
+ *   post:
+ *     summary: Thêm địa chỉ mới cho người dùng đang đăng nhập
+ *     tags: [Account (User)]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 required: true
+ *               phoneNumber:
+ *                 type: string
+ *                 required: true
+ *               provinceId:
+ *                 type: integer
+ *                 required: true
+ *               districtId:
+ *                 type: integer
+ *                 required: true
+ *               wardId:
+ *                 type: integer
+ *                 required: true
+ *               specificAddress:
+ *                 type: string
+ *                 required: true
+ *               type:
+ *                 type: string
+ *                 enum: [Nhà riêng, Văn phòng]
+ *                 required: true
+ *               isDefault:
+ *                 type: boolean
+ *                 default: false
+ *             example:
+ *               name: "Nhà riêng"
+ *               phoneNumber: "0123456789"
+ *               provinceId: 201 # Mã tỉnh/thành phố
+ *               districtId: 3442 # Mã quận/huyện
+ *               wardId: 100101 # Mã phường/xã
+ *               specificAddress: "Số 123, Đường ABC"
+ *               type: "Nhà riêng"
+ *               isDefault: true
+ *     responses:
+ *       201:
+ *         description: Thêm địa chỉ thành công
+ *       401:
+ *         description: "Không được phép (Chưa đăng nhập)"
+ *       404:
+ *         description: "Không tìm thấy tài khoản"
+ *       500:
+ *         description: "Lỗi máy chủ"
+ */
+router.post('/profile/addresses', protect, (req, res, next) => {
+    req.params.id = req.account._id;
+    next();
+}, addAddress);
+
+/**
+ * @swagger
+ * /account/profile/addresses/{addressId}:
+ *   put:
+ *     summary: Cập nhật địa chỉ của người dùng đang đăng nhập
+ *     tags: [Account (User)]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: addressId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID địa chỉ cần cập nhật
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               phoneNumber:
+ *                 type: string
+ *               provinceId:
+ *                 type: integer
+ *               districtId:
+ *                 type: integer
+ *               wardId:
+ *                 type: integer
+ *               specificAddress:
+ *                 type: string
+ *               type:
+ *                 type: string
+ *                 enum: [Nhà riêng, Văn phòng]
+ *               isDefault:
+ *                 type: boolean
+ *             example:
+ *               name: "Văn phòng mới"
+ *               phoneNumber: "0987654321"
+ *               provinceId: 201
+ *               districtId: 3442
+ *               wardId: 100102
+ *               specificAddress: "Tầng 5, Tòa nhà XYZ"
+ *               type: "Văn phòng"
+ *               isDefault: false
+ *     responses:
+ *       200:
+ *         description: "Cập nhật địa chỉ thành công"
+ *       401:
+ *         description: "Không được phép (Chưa đăng nhập)"
+ *       404:
+ *         description: "Không tìm thấy tài khoản hoặc địa chỉ"
+ *       500:
+ *         description: "Lỗi máy chủ"
+ */
+router.put('/profile/addresses/:addressId', protect, (req, res, next) => {
+    req.params.id = req.account._id;
+    next();
+}, updateAddress);
+
+/**
+ * @swagger
+ * /account/profile/addresses/{addressId}:
+ *   delete:
+ *     summary: Xóa địa chỉ của người dùng đang đăng nhập
+ *     tags: [Account (User)]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: addressId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID địa chỉ cần xóa
+ *     responses:
+ *       200:
+ *         description: "Xóa địa chỉ thành công"
+ *       401:
+ *         description: "Không được phép (Chưa đăng nhập)"
+ *       404:
+ *         description: "Không tìm thấy tài khoản hoặc địa chỉ"
+ *       500:
+ *         description: "Lỗi máy chủ"
+ */
+router.delete('/profile/addresses/:addressId', protect, (req, res, next) => {
+    req.params.id = req.account._id;
+    next();
+}, deleteAddress);
 
 export default router; 

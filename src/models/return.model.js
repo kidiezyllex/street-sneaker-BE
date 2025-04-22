@@ -40,14 +40,23 @@ const returnSchema = new mongoose.Schema({
   refundedAt: {
     type: Date
   },
+  customer: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Account',
+    required: true,
+  },
+  staff: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Account'
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: 'Account',
     required: true
   },
   updatedBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+    ref: 'Account'
   }
 }, {
   timestamps: true

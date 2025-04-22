@@ -101,7 +101,7 @@ export const getProductById = async (req, res) => {
 /**
  * Thêm sản phẩm mới
  * @route POST /api/products
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const createProduct = async (req, res) => {
   try {
@@ -117,7 +117,7 @@ export const createProduct = async (req, res) => {
 /**
  * Cập nhật thông tin sản phẩm
  * @route PUT /api/products/:id
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const updateProduct = async (req, res) => {
   try {
@@ -172,7 +172,7 @@ export const deleteProduct = async (req, res) => {
 /**
  * Thêm biến thể mới cho sản phẩm
  * @route POST /api/products/:id/variants
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const addProductVariant = async (req, res) => {
   try {
@@ -223,7 +223,7 @@ export const addProductVariant = async (req, res) => {
 /**
  * Cập nhật biến thể sản phẩm
  * @route PUT /api/products/:id/variants/:variantId
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const updateProductVariant = async (req, res) => {
   try {
@@ -278,7 +278,7 @@ export const updateProductVariant = async (req, res) => {
 /**
  * Xóa biến thể sản phẩm
  * @route DELETE /api/products/:id/variants/:variantId
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const deleteProductVariant = async (req, res) => {
   try {
@@ -320,7 +320,7 @@ export const deleteProductVariant = async (req, res) => {
 /**
  * Thêm hình ảnh cho biến thể sản phẩm
  * @route POST /api/products/:id/variants/:variantId/images
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const addProductImage = async (req, res) => {
   try {
@@ -377,7 +377,7 @@ export const addProductImage = async (req, res) => {
 /**
  * Cập nhật hình ảnh biến thể sản phẩm
  * @route PUT /api/products/:id/variants/:variantId/images/:imageId
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const updateProductImage = async (req, res) => {
   try {
@@ -442,7 +442,7 @@ export const updateProductImage = async (req, res) => {
 /**
  * Xóa hình ảnh biến thể sản phẩm
  * @route DELETE /api/products/:id/variants/:variantId/images/:imageId
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const deleteProductImage = async (req, res) => {
   try {
@@ -493,7 +493,7 @@ export const deleteProductImage = async (req, res) => {
 /**
  * Thêm khuyến mãi cho biến thể sản phẩm
  * @route POST /api/products/:id/variants/:variantId/promotions
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const addProductPromotion = async (req, res) => {
   try {
@@ -554,7 +554,7 @@ export const addProductPromotion = async (req, res) => {
 /**
  * Xóa khuyến mãi của biến thể sản phẩm
  * @route DELETE /api/products/:id/variants/:variantId/promotions/:promotionId
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const deleteProductPromotion = async (req, res) => {
   try {
@@ -733,7 +733,7 @@ export const getAllCategories = async (req, res) => {
 /**
  * Thêm danh mục mới
  * @route POST /api/products/categories
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const createCategory = async (req, res) => {
   try {
@@ -773,7 +773,7 @@ export const createCategory = async (req, res) => {
 /**
  * Cập nhật danh mục
  * @route PUT /api/products/categories/:id
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const updateCategory = async (req, res) => {
   try {
@@ -843,7 +843,7 @@ export const getAllColors = async (req, res) => {
 /**
  * Thêm màu sắc mới
  * @route POST /api/products/colors
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const createColor = async (req, res) => {
   try {
@@ -887,7 +887,7 @@ export const createColor = async (req, res) => {
 /**
  * Cập nhật màu sắc
  * @route PUT /api/products/colors/:id
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const updateColor = async (req, res) => {
   try {
@@ -965,7 +965,7 @@ export const getAllMaterials = async (req, res) => {
 /**
  * Thêm vật liệu mới
  * @route POST /api/products/materials
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const createMaterial = async (req, res) => {
   try {
@@ -1005,7 +1005,7 @@ export const createMaterial = async (req, res) => {
 /**
  * Cập nhật vật liệu
  * @route PUT /api/products/materials/:id
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const updateMaterial = async (req, res) => {
   try {
@@ -1075,7 +1075,7 @@ export const getAllSizes = async (req, res) => {
 /**
  * Thêm kích thước mới
  * @route POST /api/products/sizes
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const createSize = async (req, res) => {
   try {
@@ -1115,7 +1115,7 @@ export const createSize = async (req, res) => {
 /**
  * Cập nhật kích thước
  * @route PUT /api/products/sizes/:id
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const updateSize = async (req, res) => {
   try {
@@ -1185,7 +1185,7 @@ export const getAllSoles = async (req, res) => {
 /**
  * Thêm đế giày mới
  * @route POST /api/products/soles
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const createSole = async (req, res) => {
   try {
@@ -1225,7 +1225,7 @@ export const createSole = async (req, res) => {
 /**
  * Cập nhật đế giày
  * @route PUT /api/products/soles/:id
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const updateSole = async (req, res) => {
   try {
@@ -1365,7 +1365,7 @@ export const getBestSellingProducts = async (req, res) => {
 /**
  * Lấy sản phẩm sắp hết hàng
  * @route GET /api/products/low-stock
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const getLowStockProducts = async (req, res) => {
   try {

@@ -16,7 +16,7 @@ import {
   searchProductPromotions,
   deleteProductPromotion
 } from '../controllers/promotion.controller.js';
-import { protect, admin, staff } from '../middlewares/auth.middleware.js';
+import { protect, admin } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
 
@@ -82,7 +82,7 @@ const router = express.Router();
  *       401:
  *         description: Không được phép
  */
-router.get('/', protect, staff, getAllPromotions);
+router.get('/', protect, admin, getAllPromotions);
 
 /**
  * @swagger
@@ -120,7 +120,7 @@ router.get('/', protect, staff, getAllPromotions);
  *       404:
  *         description: Không tìm thấy khuyến mãi
  */
-router.get('/:id', protect, staff, getPromotionById);
+router.get('/:id', protect, admin, getPromotionById);
 
 /**
  * @swagger

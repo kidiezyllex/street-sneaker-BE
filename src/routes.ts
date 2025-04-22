@@ -8,7 +8,6 @@ import { Router } from 'express';
 
 // Import routes
 import authRoutes from "./routes/auth.routes.js";
-import userRoutes from "./routes/user.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
 import statRoutes from './routes/stat.routes.js';
 import productRoutes from "./routes/product.routes.js";
@@ -26,7 +25,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // API routes
     app.use("/api/auth", authRoutes);
-    app.use("/api/users", userRoutes);
     app.use("/api/upload", uploadRoutes);
     app.use("/api/stats", statRoutes);
     app.use("/api/products", productRoutes);

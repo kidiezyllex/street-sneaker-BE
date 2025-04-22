@@ -4,7 +4,7 @@ import { validateVoucher, validateProductPromotion } from '../utils/validation.j
 /**
  * Lấy danh sách tất cả khuyến mãi có phân trang
  * @route GET /api/promotions
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const getAllPromotions = async (req, res) => {
   try {
@@ -63,7 +63,7 @@ export const getAllPromotions = async (req, res) => {
 /**
  * Lấy thông tin chi tiết khuyến mãi
  * @route GET /api/promotions/:id
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const getPromotionById = async (req, res) => {
   try {

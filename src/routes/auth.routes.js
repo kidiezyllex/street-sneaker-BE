@@ -218,14 +218,215 @@ router.post('/register', register);
  */
 router.get('/profile', protect, getCurrentAccount);
 
-// Routes yêu cầu xác thực
+/**
+ * @swagger
+ * /auth/change-password:
+ *   put:
+ *     summary: Thay đổi mật khẩu người dùng
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - currentPassword
+ *               - newPassword
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Thay đổi mật khẩu thành công
+ *       401:
+ *         description: Mật khẩu hiện tại không chính xác
+ *       500:
+ *         description: Lỗi máy chủ
+ */
 router.put('/change-password', protect, changePassword);
+
+/**
+ * @swagger
+ * /auth/update-profile:
+ *   put:
+ *     summary: Cập nhật thông tin hồ sơ người dùng
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               fullName:
+ *                 type: string
+ *               phoneNumber:
+ *                 type: string
+ *               birthday:
+ *                 type: string
+ *                 format: date
+ *               gender:
+ *                 type: string
+ *               avatar:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Cập nhật thông tin thành công
+ *       404:
+ *         description: Không tìm thấy tài khoản
+ *       500:
+ *         description: Lỗi máy chủ
+ */
 router.put('/update-profile', protect, updateProfile);
 
-// Routes quản lý địa chỉ
+/**
+ * @swagger
+ * /auth/address:
+ *   post:
+ *     summary: Thêm địa chỉ mới cho người dùng
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - phoneNumber
+ *               - provinceId
+ *               - districtId
+ *               - wardId
+ *               - specificAddress
+ *             properties:
+ *               name:
+ *                 type: string
+ *               phoneNumber:
+ *                 type: string
+ *               provinceId:
+ *                 type: string
+ *               districtId:
+ *                 type: string
+ *               wardId:
+ *                 type: string
+ *               specificAddress:
+ *                 type: string
+ *               type:
+ *                 type: boolean
+ *               isDefault:
+ *                 type: boolean
+ *     responses:
+ *       201:
+ *         description: Thêm địa chỉ thành công
+ *       404:
+ *         description: Không tìm thấy tài khoản
+ *       500:
+ *         description: Lỗi máy chủ
+ */
 router.post('/address', protect, addAddress);
+
+/**
+ * @swagger
+ * /auth/address/{addressId}:
+ *   put:
+ *     summary: Cập nhật địa chỉ của người dùng
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: addressId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               phoneNumber:
+ *                 type: string
+ *               provinceId:
+ *                 type: string
+ *               districtId:
+ *                 type: string
+ *               wardId:
+ *                 type: string
+ *               specificAddress:
+ *                 type: string
+ *               type:
+ *                 type: boolean
+ *               isDefault:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Cập nhật địa chỉ thành công
+ *       404:
+ *         description: Không tìm thấy tài khoản hoặc địa chỉ
+ *       500:
+ *         description: Lỗi máy chủ
+ */
 router.put('/address/:addressId', protect, updateAddress);
+
+/**
+ * @swagger
+ * /auth/address/{addressId}:
+ *   delete:
+ *     summary: Xóa địa chỉ của người dùng
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: addressId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Xóa địa chỉ thành công
+ *       404:
+ *         description: Không tìm thấy tài khoản hoặc địa chỉ
+ *       500:
+ *         description: Lỗi máy chủ
+ */
 router.delete('/address/:addressId', protect, deleteAddress);
+
+/**
+ * @swagger
+ * /auth/address/{addressId}/default:
+ *   put:
+ *     summary: Đặt địa chỉ làm mặc định
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: addressId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Đặt địa chỉ mặc định thành công
+ *       404:
+ *         description: Không tìm thấy tài khoản hoặc địa chỉ
+ *       500:
+ *         description: Lỗi máy chủ
+ */
 router.put('/address/:addressId/default', protect, setDefaultAddress);
 
 export default router; 

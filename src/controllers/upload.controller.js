@@ -28,8 +28,7 @@ export const uploadImage = async (req, res) => {
     const fileExtension = originalName.split('.').pop();
     const uniqueFileName = `${uuidv4()}.${fileExtension}`;
 
-    // Folder path trong Cloudinary: userId
-    const folderPath = `street-sneaker/${req.user._id}/images`;
+    const folderPath = `street-sneaker/${req.account.id}/images`;
 
     // Upload ảnh lên Cloudinary
     const imageData = await uploadFileToCloudinary(

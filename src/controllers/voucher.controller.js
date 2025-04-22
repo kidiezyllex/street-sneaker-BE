@@ -5,7 +5,7 @@ import mongoose from 'mongoose';
 /**
  * Lấy danh sách tất cả voucher có phân trang
  * @route GET /api/vouchers
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const getAllVouchers = async (req, res) => {
   try {
@@ -65,7 +65,7 @@ export const getAllVouchers = async (req, res) => {
 /**
  * Lấy thông tin chi tiết voucher
  * @route GET /api/vouchers/:id
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const getVoucherById = async (req, res) => {
   try {
@@ -317,7 +317,7 @@ export const deleteVoucher = async (req, res) => {
 /**
  * Thêm khách hàng vào voucher
  * @route POST /api/vouchers/:id/customers
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const addCustomerToVoucher = async (req, res) => {
   try {
@@ -389,7 +389,7 @@ export const addCustomerToVoucher = async (req, res) => {
 /**
  * Xóa khách hàng khỏi voucher
  * @route DELETE /api/vouchers/:id/customers/:customerId
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const removeCustomerFromVoucher = async (req, res) => {
   try {
@@ -439,7 +439,7 @@ export const removeCustomerFromVoucher = async (req, res) => {
 export const checkVoucher = async (req, res) => {
   try {
     const { code, totalAmount } = req.body;
-    const accountId = req.user.id;
+    const accountId = req.account.id;
 
     const voucher = await Voucher.findOne({ code });
 
@@ -524,7 +524,7 @@ export const checkVoucher = async (req, res) => {
  */
 export const getCustomerVouchers = async (req, res) => {
   try {
-    const accountId = req.user.id;
+    const accountId = req.account.id;
     const now = new Date();
 
     // Tìm tất cả voucher mà khách hàng có thể sử dụng

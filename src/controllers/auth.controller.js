@@ -143,7 +143,7 @@ export const register = async (req, res) => {
  */
 export const getCurrentAccount = async (req, res) => {
   try {
-    const account = await Account.findById(req.user.id).select('-password');
+    const account = await Account.findById(req.account.id).select('-password');
     
     if (!account) {
       return res.status(404).json({
@@ -174,7 +174,7 @@ export const getCurrentAccount = async (req, res) => {
 export const changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    const account = await Account.findById(req.user.id);
+    const account = await Account.findById(req.account.id);
 
     // Kiểm tra mật khẩu hiện tại
     const isPasswordValid = await bcrypt.compare(currentPassword, account.password);
@@ -210,7 +210,7 @@ export const changePassword = async (req, res) => {
 export const updateProfile = async (req, res) => {
   try {
     const { fullName, phoneNumber, birthday, gender, avatar } = req.body;
-    const account = await Account.findById(req.user.id);
+    const account = await Account.findById(req.account.id);
 
     if (!account) {
       return res.status(404).json({
@@ -250,7 +250,7 @@ export const updateProfile = async (req, res) => {
 export const addAddress = async (req, res) => {
   try {
     const { name, phoneNumber, provinceId, districtId, wardId, specificAddress, type, isDefault } = req.body;
-    const account = await Account.findById(req.user.id);
+    const account = await Account.findById(req.account.id);
 
     if (!account) {
       return res.status(404).json({
@@ -304,7 +304,7 @@ export const updateAddress = async (req, res) => {
   try {
     const { addressId } = req.params;
     const { name, phoneNumber, provinceId, districtId, wardId, specificAddress, type, isDefault } = req.body;
-    const account = await Account.findById(req.user.id);
+    const account = await Account.findById(req.account.id);
 
     if (!account) {
       return res.status(404).json({
@@ -365,7 +365,7 @@ export const updateAddress = async (req, res) => {
 export const deleteAddress = async (req, res) => {
   try {
     const { addressId } = req.params;
-    const account = await Account.findById(req.user.id);
+    const account = await Account.findById(req.account.id);
 
     if (!account) {
       return res.status(404).json({
@@ -409,7 +409,7 @@ export const deleteAddress = async (req, res) => {
 export const setDefaultAddress = async (req, res) => {
   try {
     const { addressId } = req.params;
-    const account = await Account.findById(req.user.id);
+    const account = await Account.findById(req.account.id);
 
     if (!account) {
       return res.status(404).json({

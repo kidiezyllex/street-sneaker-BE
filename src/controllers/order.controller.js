@@ -76,7 +76,7 @@ export const updateOrderStatus = async (req, res) => {
     order.statusHistory.push({
       status,
       note,
-      updatedBy: req.user._id,
+      updatedBy: req.account.id,
       updatedAt: new Date()
     });
 

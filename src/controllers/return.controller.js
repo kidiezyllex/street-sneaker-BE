@@ -23,7 +23,7 @@ export const createReturn = async (req, res) => {
       items: validatedData.items,
       reason: validatedData.reason,
       status: 'PENDING',
-      createdBy: req.user._id
+      createdBy: req.account.id
     });
 
     // Tính toán số tiền hoàn trả
@@ -128,7 +128,7 @@ export const updateReturnStatus = async (req, res) => {
     }
 
     returnOrder.status = status;
-    returnOrder.updatedBy = req.user._id;
+    returnOrder.updatedBy = req.account.id;
     await returnOrder.save();
 
     res.json(returnOrder);

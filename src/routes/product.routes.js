@@ -36,7 +36,7 @@ import {
   getBestSellingProducts,
   getLowStockProducts
 } from '../controllers/product.controller.js';
-import { protect, admin, staff } from '../middlewares/auth.middleware.js';
+import { protect, admin } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
 
@@ -1330,6 +1330,6 @@ router.get('/best-selling', getBestSellingProducts);
  *       401:
  *         description: Không được phép
  */
-router.get('/low-stock', protect, staff, getLowStockProducts);
+router.get('/low-stock', protect, getLowStockProducts);
 
 export default router; 

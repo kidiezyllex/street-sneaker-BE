@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import User from '../models/user.model.js';
+import Account from '../models/account.model.js';
 import dotenv from 'dotenv';
 import config from '../config/config.js';
 
@@ -32,12 +32,12 @@ export const authenticate = async (req, res, next) => {
     const decoded = jwt.verify(token, config.jwtSecret);
     
     // Tìm người dùng từ token
-    const user = await User.findById(decoded.userId).select('-password');
+    const account = await Account.findById(decoded.accountId).select('-password');
     
-    if (!user) {
+    if (!account) {
       return res.status(401).json({
         status: false,
-        message: 'Người dùng không tồn tại',
+        message: 'Tài khoản không tồn tại',
         data: null,
         errors: {},
         timestamp: new Date().toISOString()
@@ -45,7 +45,7 @@ export const authenticate = async (req, res, next) => {
     }
     
     // Gán thông tin người dùng vào request
-    req.user = user;
+    req.account = account;
     next();
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {
@@ -110,12 +110,12 @@ export const protect = async (req, res, next) => {
     const decoded = jwt.verify(token, config.jwtSecret);
     
     // Tìm người dùng từ token với thông tin đầy đủ
-    const currentUser = await User.findById(decoded.userId).select('-password');
+    const currentAccount = await Account.findById(decoded.accountId).select('-password');
     
-    if (!currentUser) {
+    if (!currentAccount) {
       return res.status(401).json({
         status: false,
-        message: 'Người dùng của token này không còn tồn tại',
+        message: 'Tài khoản của token này không còn tồn tại',
         data: null,
         errors: {},
         timestamp: new Date().toISOString()
@@ -123,9 +123,9 @@ export const protect = async (req, res, next) => {
     }
     
     // Kiểm tra xem người dùng có thay đổi mật khẩu sau khi token được tạo không
-    if (currentUser.passwordChangedAt) {
+    if (currentAccount.passwordChangedAt) {
       const passwordChangedTimestamp = parseInt(
-        currentUser.passwordChangedAt.getTime() / 1000,
+        currentAccount.passwordChangedAt.getTime() / 1000,
         10
       );
       
@@ -142,7 +142,7 @@ export const protect = async (req, res, next) => {
     }
     
     // Đánh dấu người dùng đã đăng nhập và gán thông tin vào request
-    req.user = currentUser;
+    req.account = currentAccount;
     next();
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {
@@ -180,7 +180,7 @@ export const protect = async (req, res, next) => {
  * Middleware kiểm tra vai trò admin
  */
 export const isAdmin = (req, res, next) => {
-  if (req.user && req.user.role === 'admin') {
+  if (req.account && req.account.role === 'admin') {
     next();
   } else {
     res.status(403).json({
@@ -194,7 +194,7 @@ export const isAdmin = (req, res, next) => {
  * Alias cho middleware isAdmin, để phù hợp với coding style trong routes
  */
 export const admin = (req, res, next) => {
-  if (req.user && req.user.role === 'admin') {
+  if (req.account && req.account.role === 'admin') {
     next();
   } else {
     res.status(403).json({
@@ -205,56 +205,12 @@ export const admin = (req, res, next) => {
 };
 
 /**
- * Middleware kiểm tra vai trò employee
- */
-export const isEmployee = (req, res, next) => {
-  if (req.user && req.user.role === 'employee') {
-    next();
-  } else {
-    res.status(403).json({
-      success: false,
-      message: 'Không có quyền truy cập, chỉ employee mới có quyền'
-    });
-  }
-};
-
-/**
- * Middleware dành cho nhân viên (staff)
- * Cho phép truy cập nếu người dùng là nhân viên hoặc admin
- * Đây là alias cho isAdminOrEmployee nhưng với tên thân thiện hơn
- */
-export const staff = (req, res, next) => {
-  if (req.user && (req.user.role === 'admin' || req.user.role === 'employee')) {
-    next();
-  } else {
-    res.status(403).json({
-      success: false,
-      message: 'Không có quyền truy cập, chỉ nhân viên mới có quyền'
-    });
-  }
-};
-
-/**
- * Middleware kiểm tra vai trò admin hoặc employee
- */
-export const isAdminOrEmployee = (req, res, next) => {
-  if (req.user && (req.user.role === 'admin' || req.user.role === 'employee')) {
-    next();
-  } else {
-    res.status(403).json({
-      success: false,
-      message: 'Không có quyền truy cập, chỉ Admin hoặc employee mới có quyền'
-    });
-  }
-};
-
-/**
  * Middleware giới hạn truy cập dựa trên vai trò
  * @param  {...string} roles - Các vai trò được phép truy cập
  */
 export const restrictTo = (...roles) => {
   return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
+    if (!roles.includes(req.account.role)) {
       return res.status(403).json({
         status: false,
         message: 'Bạn không có quyền thực hiện hành động này',
@@ -273,29 +229,7 @@ export const restrictTo = (...roles) => {
 export const checkDepartmentAccess = async (req, res, next) => {
   try {
     // Nếu là admin, cho phép truy cập tất cả
-    if (req.user.role === 'admin') {
-      return next();
-    }
-    
-    // Nếu là coordinator, kiểm tra ngành
-    if (req.user.role === 'coordinator') {
-      const departmentId = req.params.departmentId || req.body.department;
-      
-      // Nếu không có departmentId, cho phép truy cập (sẽ được xử lý trong controller)
-      if (!departmentId) {
-        return next();
-      }
-      
-      const userDepartment = req.user.department ? req.user.department.toString() : null;
-      
-      // Kiểm tra xem người dùng có thuộc ngành được truy cập không
-      if (userDepartment !== departmentId) {
-        return res.status(403).json({
-          success: false,
-          message: 'Không có quyền truy cập dữ liệu của ngành khác'
-        });
-      }
-      
+    if (req.account.role === 'admin') {
       return next();
     }
     

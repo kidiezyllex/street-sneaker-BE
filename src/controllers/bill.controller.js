@@ -6,7 +6,7 @@ import Voucher from '../models/voucher.model.js';
 /**
  * Lấy danh sách tất cả đơn hàng có phân trang và filter
  * @route GET /api/bills
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const getAllBills = async (req, res) => {
   try {
@@ -68,7 +68,7 @@ export const getAllBills = async (req, res) => {
 /**
  * Tìm kiếm đơn hàng (alias cho getAllBills nhưng có thể mở rộng sau này)
  * @route GET /api/bills/search
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const searchBill = getAllBills;
 
@@ -90,7 +90,7 @@ export const getBillById = async (req, res) => {
         }
       })
       .populate('billHistory.account', 'fullName email')
-      .populate('billHistory.receptionStaff', 'fullName email')
+      .populate('billHistory.recepti', 'fullName email')
       .populate('transactions.account', 'fullName email');
 
     if (!bill) {
@@ -100,8 +100,8 @@ export const getBillById = async (req, res) => {
       });
     }
 
-    // Kiểm tra quyền truy cập nếu không phải admin/staff
-    if (req.user.role === 'CUSTOMER' && (!bill.customer || bill.customer._id.toString() !== req.user.id)) {
+    // Kiểm tra quyền truy cập nếu không phải admi
+    if (req.account.role === 'CUSTOMER' && (!bill.customer || bill.customer._id.toString() !== req.account.id)) {
       return res.status(403).json({
         success: false,
         message: 'Bạn không có quyền xem đơn hàng này'
@@ -125,7 +125,7 @@ export const getBillById = async (req, res) => {
 /**
  * Tạo đơn hàng mới (POS)
  * @route POST /api/bills
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const createBill = async (req, res) => {
   try {
@@ -256,7 +256,7 @@ export const createBill = async (req, res) => {
       for (const transaction of transactions) {
         processedTransactions.push({
           ...transaction,
-          account: req.user.id
+          account: req.account.id
         });
       }
     }
@@ -285,7 +285,7 @@ export const createBill = async (req, res) => {
     newBill.billHistory.push({
       statusBill: transactions && transactions.length > 0 ? 'DA_THANH_TOAN' : 'CHO_XAC_NHAN',
       note: 'Tạo đơn hàng mới',
-      account: req.user.id
+      account: req.account.id
     });
 
     await newBill.save();
@@ -307,7 +307,7 @@ export const createBill = async (req, res) => {
 /**
  * Cập nhật trạng thái đơn hàng
  * @route PUT /api/bills/:id/status
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const updateBillStatus = async (req, res) => {
   try {
@@ -337,7 +337,7 @@ export const updateBillStatus = async (req, res) => {
     bill.billHistory.push({
       statusBill: status,
       note: note || `Cập nhật trạng thái đơn hàng thành ${status}`,
-      account: req.user.id
+      account: req.account.id
     });
 
     // Cập nhật các ngày tương ứng với trạng thái
@@ -370,7 +370,7 @@ export const updateBillStatus = async (req, res) => {
 /**
  * Thêm giao dịch thanh toán cho đơn hàng
  * @route POST /api/bills/:id/transactions
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const addTransaction = async (req, res) => {
   try {
@@ -400,7 +400,7 @@ export const addTransaction = async (req, res) => {
       note,
       transactionCode,
       status: 'HOAT_DONG',
-      account: req.user.id
+      account: req.account.id
     });
 
     // Nếu đã thanh toán đủ, cập nhật trạng thái đơn hàng
@@ -413,7 +413,7 @@ export const addTransaction = async (req, res) => {
       bill.billHistory.push({
         statusBill: 'DA_THANH_TOAN',
         note: 'Thanh toán hoàn tất',
-        account: req.user.id
+        account: req.account.id
       });
     }
 
@@ -436,7 +436,7 @@ export const addTransaction = async (req, res) => {
 /**
  * Cập nhật thông tin đơn hàng
  * @route PUT /api/bills/:id
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const updateBill = async (req, res) => {
   try {
@@ -495,7 +495,7 @@ export const updateBill = async (req, res) => {
 /**
  * Thêm sản phẩm vào đơn hàng
  * @route POST /api/bills/:id/details
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const addBillDetail = async (req, res) => {
   try {
@@ -600,7 +600,7 @@ export const addBillDetail = async (req, res) => {
 /**
  * Cập nhật sản phẩm trong đơn hàng
  * @route PUT /api/bills/:id/details/:detailId
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const updateBillDetail = async (req, res) => {
   try {
@@ -709,7 +709,7 @@ export const updateBillDetail = async (req, res) => {
 /**
  * Xóa sản phẩm khỏi đơn hàng
  * @route DELETE /api/bills/:id/details/:detailId
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const deleteBillDetail = async (req, res) => {
   try {
@@ -793,7 +793,7 @@ export const getCustomerBills = async (req, res) => {
 
     // Xây dựng query
     const query = {
-      customer: req.user.id
+      customer: req.account.id
     };
 
     if (status) query.status = status;
@@ -830,7 +830,7 @@ export const getCustomerBills = async (req, res) => {
 /**
  * Xử lý trả hàng
  * @route POST /api/bills/:id/return
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const processBillReturn = async (req, res) => {
   try {
@@ -928,14 +928,14 @@ export const processBillReturn = async (req, res) => {
       paymentMethod: 'TIEN_MAT', // Hoặc lấy từ request
       note: note || 'Hoàn tiền trả hàng',
       status: 'HOAT_DONG',
-      account: req.user.id
+      account: req.account.id
     });
 
     // Thêm vào lịch sử đơn hàng
     bill.billHistory.push({
       statusBill: 'DA_THANH_TOAN',
       note: note || 'Xử lý trả hàng và hoàn tiền',
-      account: req.user.id
+      account: req.account.id
     });
 
     await bill.save();
@@ -960,7 +960,7 @@ export const processBillReturn = async (req, res) => {
 /**
  * Xóa đơn hàng
  * @route DELETE /api/bills/:id
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const deleteBill = async (req, res) => {
   try {

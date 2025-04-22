@@ -13,7 +13,7 @@ import {
   scanQRCode,
   printReceipt
 } from '../controllers/pos.controller.js';
-import { protect, staff } from '../middlewares/auth.middleware.js';
+import { protect, admin } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
 
@@ -55,7 +55,7 @@ const router = express.Router();
  *       401:
  *         description: Không được phép
  */
-router.post('/orders', protect, staff, createOrder);
+router.post('/orders', protect, admin, createOrder);
 
 /**
  * @swagger
@@ -90,7 +90,7 @@ router.post('/orders', protect, staff, createOrder);
  *       401:
  *         description: Không được phép
  */
-router.get('/orders', protect, staff, getOrders);
+router.get('/orders', protect, admin, getOrders);
 
 /**
  * @swagger
@@ -115,7 +115,7 @@ router.get('/orders', protect, staff, getOrders);
  *       401:
  *         description: Không được phép
  */
-router.get('/orders/:id', protect, staff, getOrderById);
+router.get('/orders/:id', protect, admin, getOrderById);
 
 /**
  * @swagger
@@ -154,7 +154,7 @@ router.get('/orders/:id', protect, staff, getOrderById);
  *       401:
  *         description: Không được phép
  */
-router.put('/orders/:id', protect, staff, updateOrder);
+router.put('/orders/:id', protect, admin, updateOrder);
 
 /**
  * @swagger
@@ -179,7 +179,7 @@ router.put('/orders/:id', protect, staff, updateOrder);
  *       401:
  *         description: Không được phép
  */
-router.delete('/orders/:id', protect, staff, deleteOrder);
+router.delete('/orders/:id', protect, admin, deleteOrder);
 
 /**
  * @swagger
@@ -220,7 +220,7 @@ router.delete('/orders/:id', protect, staff, deleteOrder);
  *       401:
  *         description: Không được phép
  */
-router.post('/orders/:id/items', protect, staff, addOrderItem);
+router.post('/orders/:id/items', protect, admin, addOrderItem);
 
 /**
  * @swagger
@@ -265,7 +265,7 @@ router.post('/orders/:id/items', protect, staff, addOrderItem);
  *       401:
  *         description: Không được phép
  */
-router.put('/orders/:id/items/:itemId', protect, staff, updateOrderItem);
+router.put('/orders/:id/items/:itemId', protect, admin, updateOrderItem);
 
 /**
  * @swagger
@@ -296,7 +296,7 @@ router.put('/orders/:id/items/:itemId', protect, staff, updateOrderItem);
  *       401:
  *         description: Không được phép
  */
-router.delete('/orders/:id/items/:itemId', protect, staff, removeOrderItem);
+router.delete('/orders/:id/items/:itemId', protect, admin, removeOrderItem);
 
 /**
  * @swagger
@@ -338,7 +338,7 @@ router.delete('/orders/:id/items/:itemId', protect, staff, removeOrderItem);
  *       401:
  *         description: Không được phép
  */
-router.post('/orders/:id/payments', protect, staff, processPayment);
+router.post('/orders/:id/payments', protect, admin, processPayment);
 
 /**
  * @swagger
@@ -365,7 +365,7 @@ router.post('/orders/:id/payments', protect, staff, processPayment);
  *       401:
  *         description: Không được phép
  */
-router.post('/orders/:id/complete', protect, staff, completeOrder);
+router.post('/orders/:id/complete', protect, admin, completeOrder);
 
 /**
  * @swagger
@@ -393,7 +393,7 @@ router.post('/orders/:id/complete', protect, staff, completeOrder);
  *       401:
  *         description: Không được phép
  */
-router.post('/scan-qr', protect, staff, scanQRCode);
+router.post('/scan-qr', protect, admin, scanQRCode);
 
 /**
  * @swagger
@@ -418,6 +418,6 @@ router.post('/scan-qr', protect, staff, scanQRCode);
  *       401:
  *         description: Không được phép
  */
-router.get('/orders/:id/print', protect, staff, printReceipt);
+router.get('/orders/:id/print', protect, admin, printReceipt);
 
 export default router;

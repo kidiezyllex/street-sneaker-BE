@@ -34,7 +34,7 @@ const accountSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['CUSTOMER', 'STAFF', 'ADMIN'],
+    enum: ['CUSTOMER', 'ADMIN'],
     default: 'CUSTOMER',
   },
   citizenId: {
@@ -82,7 +82,7 @@ accountSchema.pre('save', async function(next) {
   try {
     if (this.isNew && !this.code) {
       const count = await mongoose.models.Account.countDocuments();
-      const prefix = this.role === 'CUSTOMER' ? 'CUS' : this.role === 'STAFF' ? 'STF' : 'ADM';
+      const prefix = this.role === 'CUSTOMER' ? 'CUS' : 'ADM';
       const year = new Date().getFullYear().toString().slice(-2);
       this.code = `${prefix}${(count + 1).toString().padStart(4, '0')}${year}`;
     }

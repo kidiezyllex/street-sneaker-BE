@@ -22,9 +22,14 @@ const orderItemSchema = new mongoose.Schema({
 }, { _id: true });
 
 const orderSchema = new mongoose.Schema({
-  user: {
+  orderCode: {
+    type: String,
+    unique: true,
+    required: true,
+  },
+  account: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: 'Account',
     required: true
   },
   items: [orderItemSchema],

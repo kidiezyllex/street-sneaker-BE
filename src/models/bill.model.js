@@ -40,10 +40,6 @@ const billHistorySchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Account'
   },
-  receptionStaff: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Account'
-  }
 }, { timestamps: true });
 
 // Transaction schema

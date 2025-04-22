@@ -14,7 +14,7 @@ exports.createOrder = async (req, res) => {
     // Kiểm tra số lượng đơn hàng hiện tại
     const activeOrders = await Order.countDocuments({
       status: { $in: ['PENDING', 'PROCESSING'] },
-      createdBy: req.user._id
+      createdBy: req.account.id
     });
 
     if (activeOrders >= MAX_CONCURRENT_ORDERS) {
@@ -26,7 +26,7 @@ exports.createOrder = async (req, res) => {
     const validatedData = validateOrder(req.body);
     const order = new Order({
       ...validatedData,
-      createdBy: req.user._id
+      createdBy: req.account.id
     });
     await order.save();
     res.status(201).json(order);
@@ -39,7 +39,7 @@ exports.getOrders = async (req, res) => {
   try {
     const { page = 1, limit = 10, status } = req.query;
     const query = {
-      createdBy: req.user._id
+      createdBy: req.account.id
     };
     if (status) query.status = status;
 

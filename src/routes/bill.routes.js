@@ -4,17 +4,10 @@ import {
   getBillById,
   createBill,
   updateBill,
-  updateBillStatus,
-  addTransaction,
-  addBillDetail,
-  updateBillDetail,
-  deleteBillDetail,
-  getCustomerBills,
-  processBillReturn,
   searchBill,
   deleteBill
 } from '../controllers/bill.controller.js';
-import { protect, staff } from '../middlewares/auth.middleware.js';
+import { protect, admin } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
 
@@ -68,7 +61,7 @@ const router = express.Router();
  *       401:
  *         description: Không được phép
  */
-router.post('/', protect, staff, createBill);
+router.post('/', protect, admin, createBill);
 
 /**
  * @swagger
@@ -145,7 +138,7 @@ router.get('/:id', protect, getBillById);
  *       404:
  *         description: Không tìm thấy hóa đơn
  */
-router.put('/:id', protect, staff, updateBill);
+router.put('/:id', protect, admin, updateBill);
 
 /**
  * @swagger
@@ -170,7 +163,7 @@ router.put('/:id', protect, staff, updateBill);
  *       404:
  *         description: Không tìm thấy hóa đơn
  */
-router.delete('/:id', protect, staff, deleteBill);
+router.delete('/:id', protect, admin, deleteBill);
 
 /**
  * @swagger
@@ -246,7 +239,7 @@ router.delete('/:id', protect, staff, deleteBill);
  *       401:
  *         description: Không được phép
  */
-router.get('/', protect, staff, getAllBills);
+router.get('/', protect, admin, getAllBills);
 
 /**
  * @swagger
@@ -310,6 +303,6 @@ router.get('/', protect, staff, getAllBills);
  *       401:
  *         description: Không được phép
  */
-router.get('/search', protect, staff, searchBill);
+router.get('/search', protect, admin, searchBill);
 
 export default router; 

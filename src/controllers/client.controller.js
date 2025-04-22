@@ -1,7 +1,7 @@
 import Product from '../models/product.model.js';
 import Cart from '../models/cart.model.js';
 import Order from '../models/order.model.js';
-import User from '../models/user.model.js';
+import Account from '../models/account.model.js';
 import { validateCartItem, validateAddress } from '../utils/validation.js';
 
 // Trang chủ
@@ -224,11 +224,11 @@ export const filterProducts = async (req, res) => {
 export const addToCart = async (req, res) => {
   try {
     const validatedData = validateCartItem(req.body);
-    let cart = await Cart.findOne({ user: req.user._id });
+    let cart = await Cart.findOne({ account: req.account.id });
 
     if (!cart) {
       cart = new Cart({
-        user: req.user._id,
+        account: req.account.id,
         items: []
       });
     }
@@ -258,7 +258,7 @@ export const addToCart = async (req, res) => {
 
 export const getCart = async (req, res) => {
   try {
-    const cart = await Cart.findOne({ user: req.user._id })
+    const cart = await Cart.findOne({ account: req.account.id })
       .populate('items.product')
       .populate('items.variant');
 
@@ -271,7 +271,7 @@ export const getCart = async (req, res) => {
 export const updateCartItem = async (req, res) => {
   try {
     const { quantity } = req.body;
-    const cart = await Cart.findOne({ user: req.user._id });
+    const cart = await Cart.findOne({ account: req.account.id });
 
     if (!cart) {
       return res.status(404).json({ message: 'Không tìm thấy giỏ hàng' });
@@ -293,7 +293,7 @@ export const updateCartItem = async (req, res) => {
 
 export const removeCartItem = async (req, res) => {
   try {
-    const cart = await Cart.findOne({ user: req.user._id });
+    const cart = await Cart.findOne({ account: req.account.id });
 
     if (!cart) {
       return res.status(404).json({ message: 'Không tìm thấy giỏ hàng' });
@@ -312,7 +312,7 @@ export const removeCartItem = async (req, res) => {
 export const checkout = async (req, res) => {
   try {
     const { addressId, paymentMethod } = req.body;
-    const cart = await Cart.findOne({ user: req.user._id })
+    const cart = await Cart.findOne({ account: req.account.id })
       .populate('items.product')
       .populate('items.variant');
 
@@ -320,15 +320,15 @@ export const checkout = async (req, res) => {
       return res.status(400).json({ message: 'Giỏ hàng trống' });
     }
 
-    const user = await User.findById(req.user._id);
-    const address = user.addresses.id(addressId);
+    const account = await Account.findById(req.account.id);
+    const address = account.addresses.id(addressId);
     if (!address) {
       return res.status(400).json({ message: 'Không tìm thấy địa chỉ giao hàng' });
     }
 
     // Tạo đơn hàng mới
     const order = new Order({
-      user: req.user._id,
+      account: req.account.id,
       items: cart.items.map(item => ({
         product: item.product._id,
         variant: item.variant._id,
@@ -375,7 +375,7 @@ export const getPaymentMethods = async (req, res) => {
 export const getOrders = async (req, res) => {
   try {
     const { page = 1, limit = 10, status } = req.query;
-    const query = { user: req.user._id };
+    const query = { account: req.account.id };
     if (status) query.status = status;
 
     const orders = await Order.find(query)
@@ -401,7 +401,7 @@ export const getOrderDetails = async (req, res) => {
   try {
     const order = await Order.findOne({
       _id: req.params.id,
-      user: req.user._id
+      account: req.account.id
     })
       .populate('items.product')
       .populate('items.variant');
@@ -419,8 +419,8 @@ export const getOrderDetails = async (req, res) => {
 // Hồ sơ khách hàng
 export const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select('-password');
-    res.json(user);
+    const account = await Account.findById(req.account.id).select('-password');
+    res.json(account);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -428,14 +428,14 @@ export const getProfile = async (req, res) => {
 
 export const updateProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
-    Object.assign(user, req.body);
-    await user.save();
+    const account = await Account.findById(req.account.id);
+    Object.assign(account, req.body);
+    await account.save();
 
-    const userResponse = user.toObject();
-    delete userResponse.password;
+    const accountResponse = account.toObject();
+    delete accountResponse.password;
 
-    res.json(userResponse);
+    res.json(accountResponse);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -443,8 +443,8 @@ export const updateProfile = async (req, res) => {
 
 export const getAddresses = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
-    res.json(user.addresses);
+    const account = await Account.findById(req.account.id);
+    res.json(account.addresses);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -453,12 +453,14 @@ export const getAddresses = async (req, res) => {
 export const addAddress = async (req, res) => {
   try {
     const validatedData = validateAddress(req.body);
-    const user = await User.findById(req.user._id);
+    const account = await Account.findById(req.account.id);
+    if (!account) {
+      return res.status(404).json({ message: 'Account not found' });
+    }
+    account.addresses.push(validatedData);
+    await account.save();
 
-    user.addresses.push(validatedData);
-    await user.save();
-
-    res.json(user.addresses);
+    res.json(account.addresses);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -467,17 +469,18 @@ export const addAddress = async (req, res) => {
 export const updateAddress = async (req, res) => {
   try {
     const validatedData = validateAddress(req.body);
-    const user = await User.findById(req.user._id);
-
-    const address = user.addresses.id(req.params.id);
-    if (!address) {
-      return res.status(404).json({ message: 'Không tìm thấy địa chỉ' });
+    const account = await Account.findById(req.account.id);
+    if (!account) {
+      return res.status(404).json({ message: 'Account not found' });
     }
+    const address = account.addresses.id(req.params.id);
+    if (!address) {
+      return res.status(404).json({ message: 'Address not found' });
+    }
+    address.set(validatedData);
+    await account.save();
 
-    Object.assign(address, validatedData);
-    await user.save();
-
-    res.json(user.addresses);
+    res.json(account.addresses);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -485,11 +488,14 @@ export const updateAddress = async (req, res) => {
 
 export const deleteAddress = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
-    user.addresses.pull(req.params.id);
-    await user.save();
+    const account = await Account.findById(req.account.id);
+    if (!account) {
+      return res.status(404).json({ message: 'Account not found' });
+    }
+    account.addresses.pull(req.params.id);
+    await account.save();
 
-    res.json(user.addresses);
+    res.json(account.addresses);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

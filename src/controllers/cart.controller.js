@@ -9,7 +9,7 @@ import Product from '../models/product.model.js';
 export const getCart = async (req, res) => {
   try {
     // Tìm giỏ hàng của người dùng
-    let cart = await Cart.findOne({ account: req.user.id })
+    let cart = await Cart.findOne({ account: req.account.id })
       .populate({
         path: 'items.productDetail',
         select: 'price code brand sole material category size color images',
@@ -22,7 +22,7 @@ export const getCart = async (req, res) => {
     // Nếu không có giỏ hàng, tạo mới
     if (!cart) {
       cart = new Cart({
-        account: req.user.id,
+        account: req.account.id,
         items: []
       });
       await cart.save();
@@ -88,12 +88,12 @@ export const addToCart = async (req, res) => {
     }
 
     // Tìm giỏ hàng của người dùng
-    let cart = await Cart.findOne({ account: req.user.id });
+    let cart = await Cart.findOne({ account: req.account.id });
 
     // Nếu không có giỏ hàng, tạo mới
     if (!cart) {
       cart = new Cart({
-        account: req.user.id,
+        account: req.account.id,
         items: []
       });
     }
@@ -158,7 +158,7 @@ export const updateCartItem = async (req, res) => {
     }
 
     // Tìm giỏ hàng của người dùng
-    const cart = await Cart.findOne({ account: req.user.id });
+    const cart = await Cart.findOne({ account: req.account.id });
 
     if (!cart) {
       return res.status(404).json({
@@ -243,7 +243,7 @@ export const updateCartItem = async (req, res) => {
 export const removeFromCart = async (req, res) => {
   try {
     // Tìm giỏ hàng của người dùng
-    const cart = await Cart.findOne({ account: req.user.id });
+    const cart = await Cart.findOne({ account: req.account.id });
 
     if (!cart) {
       return res.status(404).json({
@@ -301,7 +301,7 @@ export const removeFromCart = async (req, res) => {
 export const clearCart = async (req, res) => {
   try {
     // Tìm giỏ hàng của người dùng
-    const cart = await Cart.findOne({ account: req.user.id });
+    const cart = await Cart.findOne({ account: req.account.id });
 
     if (!cart) {
       return res.status(404).json({

@@ -1,8 +1,7 @@
 import { Product } from '../models/index.js';
 import Order from '../models/order.model.js';
-import User from '../models/user.model.js';
-import Bill from '../models/bill.model.js';
 import Account from '../models/account.model.js';
+import Bill from '../models/bill.model.js';
 
 // Thống kê doanh thu theo khoảng thời gian
 export const getRevenueStat = async (req, res) => {
@@ -265,7 +264,7 @@ export const getCustomerStat = async (req, res) => {
     const { startDate, endDate } = req.query;
     
     // Tổng số khách hàng
-    const totalCustomers = await User.countDocuments({ role: 'User' });
+    const totalCustomers = await Account.countDocuments({ role: 'CUSTOMER' });
     
     let matchStage = {};
     
@@ -277,9 +276,9 @@ export const getCustomerStat = async (req, res) => {
     }
 
     // Khách hàng mới trong khoảng thời gian
-    const newCustomers = await User.countDocuments({
+    const newCustomers = await Account.countDocuments({
       ...matchStage,
-      role: 'User'
+      role: 'CUSTOMER'
     });
 
     // Khách hàng có đơn hàng nhiều nhất
@@ -287,7 +286,7 @@ export const getCustomerStat = async (req, res) => {
       { $match: { ...matchStage, status: 'Delivered' } },
       {
         $group: {
-          _id: "$userId",
+          _id: "$accountId",
           orderCount: { $sum: 1 },
           totalSpent: { $sum: "$totalPrice" }
         }
@@ -296,22 +295,29 @@ export const getCustomerStat = async (req, res) => {
       { $limit: 10 },
       {
         $lookup: {
-          from: 'users',
+          from: 'accounts',
           localField: '_id',
           foreignField: '_id',
-          as: 'userDetails'
+          as: 'accountDetails'
         }
       },
       {
         $addFields: {
-          name: { $arrayElemAt: ["$userDetails.name", 0] },
-          email: { $arrayElemAt: ["$userDetails.email", 0] }
+          name: { $arrayElemAt: ["$accountDetails.name", 0] },
+          email: { $arrayElemAt: ["$accountDetails.email", 0] }
         }
       },
       {
         $project: {
-          userDetails: 0
+          _id: 1,
+          totalSpent: 1,
+          orderCount: 1,
+          name: { $arrayElemAt: ["$accountDetails.name", 0] },
+          email: { $arrayElemAt: ["$accountDetails.email", 0] }
         }
+      },
+      {
+        $sort: { totalSpent: -1 }
       }
     ]);
 
@@ -336,7 +342,7 @@ export const getCustomerStat = async (req, res) => {
 /**
  * Thống kê tổng quan
  * @route GET /api/stats/overview
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const getOverviewStats = async (req, res) => {
   try {
@@ -383,7 +389,7 @@ export const getOverviewStats = async (req, res) => {
     ]);
 
     // Khách hàng mới
-    const newCustomers = await User.countDocuments({
+    const newCustomers = await Account.countDocuments({
       role: 'CUSTOMER',
       createdAt: {
         $gte: startOfDay,
@@ -405,7 +411,7 @@ export const getOverviewStats = async (req, res) => {
 /**
  * Thống kê doanh thu theo thời gian
  * @route GET /api/stats/revenue
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const getRevenueStats = async (req, res) => {
   try {
@@ -502,7 +508,7 @@ export const getRevenueStats = async (req, res) => {
 /**
  * Thống kê sản phẩm bán chạy
  * @route GET /api/stats/best-selling
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const getBestSellingProducts = async (req, res) => {
   try {
@@ -586,7 +592,7 @@ export const getBestSellingProducts = async (req, res) => {
 /**
  * Thống kê sản phẩm sắp hết
  * @route GET /api/stats/low-stock
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const getLowStockProducts = async (req, res) => {
   try {
@@ -629,7 +635,7 @@ export const getLowStockProducts = async (req, res) => {
 /**
  * Thống kê khách hàng tiềm năng
  * @route GET /api/stats/potential-customers
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const getPotentialCustomers = async (req, res) => {
   try {
@@ -652,12 +658,12 @@ export const getPotentialCustomers = async (req, res) => {
           from: 'accounts',
           localField: '_id',
           foreignField: '_id',
-          as: 'customerInfo'
+          as: 'accountDetails'
         }
       },
       { 
         $addFields: { 
-          customer: { $arrayElemAt: ['$customerInfo', 0] } 
+          customer: { $arrayElemAt: ['$accountDetails', 0] } 
         } 
       },
       { 
@@ -690,7 +696,7 @@ export const getPotentialCustomers = async (req, res) => {
 /**
  * Thống kê tăng trưởng theo thời gian
  * @route GET /api/stats/growth
- * @access Private (Admin, Staff)
+ * @access Private (Admin)
  */
 export const getGrowthStats = async (req, res) => {
   try {
@@ -736,13 +742,7 @@ export const getGrowthStats = async (req, res) => {
     ]);
 
     // Khách hàng
-    const customerGrowth = await User.aggregate([
-      {
-        $match: {
-          role: 'CUSTOMER',
-          createdAt: { $gte: lastMonth }
-        }
-      },
+    const customerGrowth = await Account.aggregate([
       {
         $group: {
           _id: {

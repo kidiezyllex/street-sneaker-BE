@@ -21,41 +21,45 @@ export const validateOrderItems = (items) => {
   return null;
 };
 
-// Validate thông tin người dùng
-export const validateUser = (userData) => {
-  if (!userData) {
-    throw new Error('Dữ liệu người dùng không được để trống');
-  }
-
-  // Kiểm tra tên đầy đủ
-  if (!userData.fullName || userData.fullName.trim() === '') {
-    throw new Error('Họ và tên không được để trống');
-  }
-
-  // Kiểm tra email
-  if (!userData.email || userData.email.trim() === '') {
-    throw new Error('Email không được để trống');
-  }
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(userData.email)) {
-    throw new Error('Email không đúng định dạng');
-  }
-
-  // Kiểm tra số điện thoại
-  if (userData.phoneNumber) {
-    const phoneRegex = /^0\d{9}$/;
-    if (!phoneRegex.test(userData.phoneNumber)) {
-      throw new Error('Số điện thoại không đúng định dạng');
+/**
+ * Validates account data.
+ * @param {object} accountData - The account data to validate.
+ * @returns {object} - The validated account data.
+ * @throws {Error} - If validation fails.
+ */
+export const validateAccount = (accountData) => {
+    if (!accountData) {
+        throw new Error('Account data is required.');
     }
-  }
 
-  // Kiểm tra mật khẩu
-  if (!userData.password || userData.password.length < 6) {
-    throw new Error('Mật khẩu phải có ít nhất 6 ký tự');
-  }
+    // Validate fullName
+    if (!accountData.fullName || accountData.fullName.trim() === '') {
+        throw new Error('Full name is required.');
+    }
 
-  return userData;
+    // Validate email
+    if (!accountData.email || accountData.email.trim() === '') {
+        throw new Error('Email is required.');
+    }
+    const emailRegex = /^\S+@\S+\.\S+$/;
+    if (!emailRegex.test(accountData.email)) {
+        throw new Error('Invalid email format.');
+    }
+
+    // Validate phoneNumber (optional)
+    if (accountData.phoneNumber) {
+        const phoneRegex = /^\d{10}$/;
+        if (!phoneRegex.test(accountData.phoneNumber)) {
+            throw new Error('Invalid phone number format (must be 10 digits).');
+        }
+    }
+
+    // Validate password (ensure length >= 6)
+    if (!accountData.password || accountData.password.length < 6) {
+        throw new Error('Password must be at least 6 characters long.');
+    }
+
+    return accountData;
 };
 
 // Validate thông tin địa chỉ
