@@ -105,37 +105,12 @@ export const getProductById = async (req, res) => {
  */
 export const createProduct = async (req, res) => {
   try {
-    const { name, status, variants } = req.body;
-
-    // Kiểm tra sản phẩm đã tồn tại chưa
-    const existingProduct = await Product.findOne({ name });
-    if (existingProduct) {
-      return res.status(400).json({
-        success: false,
-        message: 'Tên sản phẩm đã tồn tại'
-      });
-    }
-
-    // Tạo sản phẩm mới
-    const newProduct = new Product({
-      name,
-      status: status || 'HOAT_DONG',
-      variants: variants || []
-    });
-
-    await newProduct.save();
-
-    return res.status(201).json({
-      success: true,
-      message: 'Thêm sản phẩm mới thành công',
-      data: newProduct
-    });
+    const validatedData = validateProduct(req.body);
+    const product = new Product(validatedData);
+    await product.save();
+    res.status(201).json(product);
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Đã xảy ra lỗi khi thêm sản phẩm mới',
-      error: error.message
-    });
+    res.status(400).json({ message: error.message });
   }
 };
 
@@ -146,43 +121,18 @@ export const createProduct = async (req, res) => {
  */
 export const updateProduct = async (req, res) => {
   try {
-    const { name, status } = req.body;
-    const product = await Product.findById(req.params.id);
-
+    const validatedData = validateProduct(req.body);
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      validatedData,
+      { new: true }
+    );
     if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy sản phẩm'
-      });
+      return res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
     }
-
-    // Kiểm tra nếu đổi tên sản phẩm thì tên mới đã tồn tại chưa
-    if (name && name !== product.name) {
-      const existingProduct = await Product.findOne({ name });
-      if (existingProduct) {
-        return res.status(400).json({
-          success: false,
-          message: 'Tên sản phẩm đã tồn tại'
-        });
-      }
-      product.name = name;
-    }
-
-    if (status) product.status = status;
-
-    await product.save();
-
-    return res.status(200).json({
-      success: true,
-      message: 'Cập nhật thông tin sản phẩm thành công',
-      data: product
-    });
+    res.json(product);
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Đã xảy ra lỗi khi cập nhật thông tin sản phẩm',
-      error: error.message
-    });
+    res.status(400).json({ message: error.message });
   }
 };
 
@@ -1326,35 +1276,28 @@ export const updateSole = async (req, res) => {
  */
 export const searchProducts = async (req, res) => {
   try {
-    const { q, limit = 10 } = req.query;
-    
-    if (!q) {
-      return res.status(400).json({
-        success: false,
-        message: 'Vui lòng nhập từ khóa tìm kiếm'
-      });
-    }
-    
-    // Tìm kiếm sản phẩm theo tên hoặc mã biến thể
-    const products = await Product.find({
+    const { query, page = 1, limit = 10 } = req.query;
+    const searchQuery = {
       $or: [
-        { name: { $regex: q, $options: 'i' } },
-        { 'variants.code': { $regex: q, $options: 'i' } }
-      ],
-      status: 'HOAT_DONG'
-    }).limit(parseInt(limit));
+        { name: { $regex: query, $options: 'i' } },
+        { description: { $regex: query, $options: 'i' } }
+      ]
+    };
     
-    return res.status(200).json({
-      success: true,
-      message: 'Tìm kiếm sản phẩm thành công',
-      data: products
+    const products = await Product.find(searchQuery)
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .exec();
+
+    const count = await Product.countDocuments(searchQuery);
+    
+    res.json({
+      products,
+      totalPages: Math.ceil(count / limit),
+      currentPage: page
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Đã xảy ra lỗi khi tìm kiếm sản phẩm',
-      error: error.message
-    });
+    res.status(400).json({ message: error.message });
   }
 };
 
@@ -1450,5 +1393,141 @@ export const getLowStockProducts = async (req, res) => {
       message: 'Đã xảy ra lỗi khi lấy sản phẩm sắp hết hàng',
       error: error.message
     });
+  }
+};
+
+export const addMaterial = async (req, res) => {
+  try {
+    const validatedData = validateMaterial(req.body);
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
+    }
+    product.materials.push(validatedData);
+    await product.save();
+    res.status(201).json(product);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const addVariant = async (req, res) => {
+  try {
+    const validatedData = validateVariant(req.body);
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
+    }
+    const variant = new Variant({
+      ...validatedData,
+      productId: product._id
+    });
+    await variant.save();
+    res.status(201).json(variant);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const addImages = async (req, res) => {
+  try {
+    const { files } = req;
+    const { color } = req.body;
+    if (!files || files.length === 0) {
+      return res.status(400).json({ message: 'Vui lòng tải lên ít nhất một hình ảnh' });
+    }
+
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
+    }
+
+    const uploadPromises = files.map(file => uploadToCloudinary(file.path));
+    const uploadedImages = await Promise.all(uploadPromises);
+
+    const images = uploadedImages.map(image => ({
+      url: image.url,
+      color,
+      productId: product._id
+    }));
+
+    const savedImages = await Image.insertMany(images);
+    res.status(201).json(savedImages);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const quickEdit = async (req, res) => {
+  try {
+    const updates = req.body;
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
+    }
+
+    // Chỉ cho phép cập nhật một số trường nhất định
+    const allowedUpdates = ['name', 'description', 'price', 'stock'];
+    const updateData = {};
+    Object.keys(updates).forEach(key => {
+      if (allowedUpdates.includes(key)) {
+        updateData[key] = updates[key];
+      }
+    });
+
+    Object.assign(product, updateData);
+    await product.save();
+    res.json(product);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const filterProducts = async (req, res) => {
+  try {
+    const { 
+      categories,
+      materials,
+      colors,
+      sizes,
+      minPrice,
+      maxPrice,
+      sort,
+      page = 1,
+      limit = 10
+    } = req.query;
+
+    let query = {};
+    if (categories) query.categories = { $in: categories.split(',') };
+    if (materials) query['materials.name'] = { $in: materials.split(',') };
+    if (colors) query['variants.color'] = { $in: colors.split(',') };
+    if (sizes) query['variants.size'] = { $in: sizes.split(',') };
+    if (minPrice || maxPrice) {
+      query['variants.price'] = {};
+      if (minPrice) query['variants.price'].$gte = Number(minPrice);
+      if (maxPrice) query['variants.price'].$lte = Number(maxPrice);
+    }
+
+    let sortOption = {};
+    if (sort) {
+      const [field, order] = sort.split(':');
+      sortOption[field] = order === 'desc' ? -1 : 1;
+    }
+
+    const products = await Product.find(query)
+      .sort(sortOption)
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .exec();
+
+    const count = await Product.countDocuments(query);
+
+    res.json({
+      products,
+      totalPages: Math.ceil(count / limit),
+      currentPage: page
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 }; 

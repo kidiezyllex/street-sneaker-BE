@@ -1,4 +1,8 @@
-import { Account } from '../models/index.js';
+
+import User from '../models/user.model.js';
+import { validateUser, validateAddress, validatePassword } from '../utils/validation.js';
+import { hashPassword, comparePassword } from '../utils/auth.js';
+import { scanIdCard } from '../utils/scanner.js';
 
 // Lấy danh sách tất cả tài khoản
 export const getAllAccounts = async (req, res) => {
@@ -143,59 +147,19 @@ export const createAccount = async (req, res) => {
 // Tạo tài khoản nhân viên (chỉ dành cho admin)
 export const createStaffAccount = async (req, res) => {
   try {
-    const { fullName, email, password, phoneNumber, gender, birthday, citizenId, position, department } = req.body;
-    
-    // Kiểm tra email hoặc số điện thoại đã tồn tại
-    const existingAccount = await Account.findOne({
-      $or: [
-        { email: email },
-        { phoneNumber: phoneNumber }
-      ]
+    const validatedData = validateUser(req.body);
+    const hashedPassword = await hashPassword(validatedData.password);
+
+    const user = new User({
+      ...validatedData,
+      password: hashedPassword,
+      role: 'STAFF'
     });
-    
-    if (existingAccount) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email hoặc số điện thoại đã được sử dụng'
-      });
-    }
-    
-    // Tạo tài khoản nhân viên mới
-    const newStaffAccount = new Account({
-      fullName,
-      email,
-      password,
-      phoneNumber,
-      role: 'STAFF',
-      gender,
-      birthday,
-      citizenId,
-      position,
-      department
-    });
-    
-    await newStaffAccount.save();
-    
-    return res.status(201).json({
-      success: true,
-      message: 'Tạo tài khoản nhân viên thành công',
-      data: {
-        _id: newStaffAccount._id,
-        code: newStaffAccount.code,
-        fullName: newStaffAccount.fullName,
-        email: newStaffAccount.email,
-        phoneNumber: newStaffAccount.phoneNumber,
-        role: newStaffAccount.role,
-        position: newStaffAccount.position,
-        department: newStaffAccount.department
-      }
-    });
+
+    await user.save();
+    res.status(201).json(user);
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Đã xảy ra lỗi khi tạo tài khoản nhân viên',
-      error: error.message
-    });
+    res.status(400).json({ message: error.message });
   }
 };
 
@@ -523,5 +487,255 @@ export const deleteAddress = async (req, res) => {
       message: 'Đã xảy ra lỗi khi xóa địa chỉ',
       error: error.message
     });
+  }
+};
+
+// Quản lý tài khoản nhân viên
+exports.getStaffAccounts = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, status } = req.query;
+    const query = { role: 'STAFF' };
+    if (status) query.status = status;
+
+    const staff = await User.find(query)
+      .select('-password')
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .exec();
+
+    const count = await User.countDocuments(query);
+
+    res.json({
+      staff,
+      totalPages: Math.ceil(count / limit),
+      currentPage: page
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+exports.getStaffAccountById = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('-password');
+    if (!user || user.role !== 'STAFF') {
+      return res.status(404).json({ message: 'Không tìm thấy tài khoản nhân viên' });
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+exports.updateStaffAccount = async (req, res) => {
+  try {
+    const validatedData = validateUser(req.body);
+    const user = await User.findById(req.params.id);
+    
+    if (!user || user.role !== 'STAFF') {
+      return res.status(404).json({ message: 'Không tìm thấy tài khoản nhân viên' });
+    }
+
+    if (validatedData.password) {
+      validatedData.password = await hashPassword(validatedData.password);
+    }
+
+    Object.assign(user, validatedData);
+    await user.save();
+    
+    const userResponse = user.toObject();
+    delete userResponse.password;
+    
+    res.json(userResponse);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+exports.deleteStaffAccount = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user || user.role !== 'STAFF') {
+      return res.status(404).json({ message: 'Không tìm thấy tài khoản nhân viên' });
+    }
+
+    await user.remove();
+    res.json({ message: 'Đã xóa tài khoản nhân viên' });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+exports.scanStaffId = async (req, res) => {
+  try {
+    const { image } = req.files;
+    const staffData = await scanIdCard(image.path);
+    res.json(staffData);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Quản lý tài khoản khách hàng
+exports.getCustomerAccounts = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, status } = req.query;
+    const query = { role: 'CUSTOMER' };
+    if (status) query.status = status;
+
+    const customers = await User.find(query)
+      .select('-password')
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .exec();
+
+    const count = await User.countDocuments(query);
+
+    res.json({
+      customers,
+      totalPages: Math.ceil(count / limit),
+      currentPage: page
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+exports.getCustomerAccountById = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('-password');
+    if (!user || user.role !== 'CUSTOMER') {
+      return res.status(404).json({ message: 'Không tìm thấy tài khoản khách hàng' });
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+exports.updateCustomerAccount = async (req, res) => {
+  try {
+    const validatedData = validateUser(req.body);
+    const user = await User.findById(req.params.id);
+    
+    if (!user || user.role !== 'CUSTOMER') {
+      return res.status(404).json({ message: 'Không tìm thấy tài khoản khách hàng' });
+    }
+
+    Object.assign(user, validatedData);
+    await user.save();
+    
+    const userResponse = user.toObject();
+    delete userResponse.password;
+    
+    res.json(userResponse);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+exports.addCustomerAddress = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user || user.role !== 'CUSTOMER') {
+      return res.status(404).json({ message: 'Không tìm thấy tài khoản khách hàng' });
+    }
+
+    const validatedData = validateAddress(req.body);
+    user.addresses.push(validatedData);
+    await user.save();
+
+    res.json(user.addresses);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+exports.updateCustomerAddress = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user || user.role !== 'CUSTOMER') {
+      return res.status(404).json({ message: 'Không tìm thấy tài khoản khách hàng' });
+    }
+
+    const address = user.addresses.id(req.params.addressId);
+    if (!address) {
+      return res.status(404).json({ message: 'Không tìm thấy địa chỉ' });
+    }
+
+    const validatedData = validateAddress(req.body);
+    Object.assign(address, validatedData);
+    await user.save();
+
+    res.json(user.addresses);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+exports.deleteCustomerAddress = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user || user.role !== 'CUSTOMER') {
+      return res.status(404).json({ message: 'Không tìm thấy tài khoản khách hàng' });
+    }
+
+    user.addresses.pull(req.params.addressId);
+    await user.save();
+
+    res.json(user.addresses);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Quản lý hồ sơ cá nhân
+exports.getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('-password');
+    res.json(user);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+exports.updateProfile = async (req, res) => {
+  try {
+    const validatedData = validateUser(req.body);
+    const user = await User.findById(req.user._id);
+
+    // Không cho phép thay đổi role qua API này
+    delete validatedData.role;
+    
+    Object.assign(user, validatedData);
+    await user.save();
+    
+    const userResponse = user.toObject();
+    delete userResponse.password;
+    
+    res.json(userResponse);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+exports.changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = validatePassword(req.body);
+    const user = await User.findById(req.user._id);
+
+    const isMatch = await comparePassword(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Mật khẩu hiện tại không đúng' });
+    }
+
+    user.password = await hashPassword(newPassword);
+    await user.save();
+
+    res.json({ message: 'Đã thay đổi mật khẩu thành công' });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 }; 

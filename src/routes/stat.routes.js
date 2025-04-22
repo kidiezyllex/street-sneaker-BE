@@ -1,13 +1,6 @@
 import express from 'express';
-import {
-  getOverviewStats,
-  getRevenueStats,
-  getBestSellingProducts,
-  getLowStockProducts,
-  getPotentialCustomers,
-  getGrowthStats
-} from '../controllers/stat.controller.js';
-import { protect, staff } from '../middlewares/auth.middleware.js';
+import * as statController from '../controllers/stat.controller.js';
+import { protect, admin } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
 
@@ -74,7 +67,7 @@ const router = express.Router();
  *       401:
  *         description: Không được phép
  */
-router.get('/overview', protect, staff, getOverviewStats);
+router.get('/overview', protect, admin, statController.getOverviewStats);
 
 /**
  * @swagger
@@ -145,13 +138,16 @@ router.get('/overview', protect, staff, getOverviewStats);
  *       401:
  *         description: Không được phép
  */
-router.get('/revenue', protect, staff, getRevenueStats);
+router.get('/revenue', protect, admin, statController.getRevenueStats);
+router.get('/revenue/daily', protect, admin, statController.getRevenueStats);
+router.get('/revenue/monthly', protect, admin, statController.getRevenueStats);
+router.get('/revenue/yearly', protect, admin, statController.getRevenueStats);
 
 /**
  * @swagger
- * /stats/best-selling:
+ * /stats/orders:
  *   get:
- *     summary: Lấy danh sách sản phẩm bán chạy nhất
+ *     summary: Lấy thống kê đơn hàng
  *     tags: [Statistics]
  *     security:
  *       - bearerAuth: []
@@ -168,15 +164,9 @@ router.get('/revenue', protect, staff, getRevenueStats);
  *           type: string
  *           format: date
  *         description: Ngày kết thúc
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 10
- *         description: Số sản phẩm cần lấy
  *     responses:
  *       200:
- *         description: Danh sách sản phẩm bán chạy nhất
+ *         description: Thống kê đơn hàng
  *         content:
  *           application/json:
  *             schema:
@@ -187,77 +177,43 @@ router.get('/revenue', protect, staff, getRevenueStats);
  *                   example: true
  *                 message:
  *                   type: string
- *                   example: Lấy danh sách sản phẩm bán chạy nhất thành công
+ *                   example: Lấy thống kê đơn hàng thành công
  *                 data:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       product:
- *                         $ref: '#/components/schemas/Product'
- *                       quantity:
- *                         type: integer
- *                       revenue:
- *                         type: number
+ *                   type: object
+ *                   properties:
+ *                     totalOrders:
+ *                       type: integer
+ *                       description: Tổng số đơn hàng
+ *                     ordersByStatus:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           status:
+ *                             type: string
+ *                           orderCount:
+ *                             type: integer
+ *                     ordersByPaymentMethod:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           paymentMethod:
+ *                             type: string
+ *                           orderCount:
+ *                             type: integer
  *       401:
  *         description: Không được phép
  */
-router.get('/best-selling', protect, staff, getBestSellingProducts);
+router.get('/orders', protect, admin, statController.getOrderStat);
+router.get('/orders/status', protect, admin, statController.getOrderStat);
+router.get('/orders/payment-methods', protect, admin, statController.getOrderStat);
 
 /**
  * @swagger
- * /stats/low-stock:
+ * /stats/products:
  *   get:
- *     summary: Lấy danh sách sản phẩm sắp hết hàng
- *     tags: [Statistics]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 10
- *         description: Số sản phẩm cần lấy
- *       - in: query
- *         name: threshold
- *         schema:
- *           type: integer
- *           default: 10
- *         description: Ngưỡng số lượng tồn kho
- *     responses:
- *       200:
- *         description: Danh sách sản phẩm sắp hết hàng
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: Lấy danh sách sản phẩm sắp hết hàng thành công
- *                 data:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       product:
- *                         $ref: '#/components/schemas/Product'
- *                       quantity:
- *                         type: integer
- *       401:
- *         description: Không được phép
- */
-router.get('/low-stock', protect, staff, getLowStockProducts);
-
-/**
- * @swagger
- * /stats/potential-customers:
- *   get:
- *     summary: Lấy danh sách khách hàng tiềm năng
+ *     summary: Lấy thống kê sản phẩm
  *     tags: [Statistics]
  *     security:
  *       - bearerAuth: []
@@ -274,15 +230,9 @@ router.get('/low-stock', protect, staff, getLowStockProducts);
  *           type: string
  *           format: date
  *         description: Ngày kết thúc
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 10
- *         description: Số khách hàng cần lấy
  *     responses:
  *       200:
- *         description: Danh sách khách hàng tiềm năng
+ *         description: Thống kê sản phẩm
  *         content:
  *           application/json:
  *             schema:
@@ -293,22 +243,104 @@ router.get('/low-stock', protect, staff, getLowStockProducts);
  *                   example: true
  *                 message:
  *                   type: string
- *                   example: Lấy danh sách khách hàng tiềm năng thành công
+ *                   example: Lấy thống kê sản phẩm thành công
  *                 data:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       customer:
- *                         $ref: '#/components/schemas/Customer'
- *                       totalSpent:
- *                         type: number
- *                       orderCount:
- *                         type: integer
+ *                   type: object
+ *                   properties:
+ *                     totalProducts:
+ *                       type: integer
+ *                       description: Tổng số sản phẩm
+ *                     productsByCategory:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           category:
+ *                             type: string
+ *                           productCount:
+ *                             type: integer
+ *                     productsBySeller:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           seller:
+ *                             type: string
+ *                           productCount:
+ *                             type: integer
+ *                     productsByLowStock:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           product:
+ *                             $ref: '#/components/schemas/Product'
+ *                           quantity:
+ *                             type: integer
  *       401:
  *         description: Không được phép
  */
-router.get('/potential-customers', protect, staff, getPotentialCustomers);
+router.get('/products', protect, admin, statController.getInventoryStat);
+router.get('/products/best-sellers', protect, admin, statController.getTopSellingProducts);
+router.get('/products/low-stock', protect, admin, statController.getInventoryStat);
+
+/**
+ * @swagger
+ * /stats/customers:
+ *   get:
+ *     summary: Lấy thống kê khách hàng
+ *     tags: [Statistics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Ngày bắt đầu
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Ngày kết thúc
+ *     responses:
+ *       200:
+ *         description: Thống kê khách hàng
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Lấy thống kê khách hàng thành công
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     totalCustomers:
+ *                       type: integer
+ *                       description: Tổng số khách hàng
+ *                     customersByTop:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           customer:
+ *                             $ref: '#/components/schemas/Customer'
+ *                           totalSpent:
+ *                             type: number
+ *                           orderCount:
+ *                             type: integer
+ *       401:
+ *         description: Không được phép
+ */
+router.get('/customers', protect, admin, statController.getCustomerStat);
+router.get('/customers/top', protect, admin, statController.getPotentialCustomers);
 
 /**
  * @swagger
@@ -370,6 +402,6 @@ router.get('/potential-customers', protect, staff, getPotentialCustomers);
  *       401:
  *         description: Không được phép
  */
-router.get('/growth', protect, staff, getGrowthStats);
+router.get('/growth', protect, admin, statController.getGrowthStats);
 
 export default router; 

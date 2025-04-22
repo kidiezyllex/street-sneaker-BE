@@ -1,7 +1,5 @@
 import { Category, Color, Material, Size, Sole } from '../models/index.js';
 
-// =================== Category Controller ===================
-
 // Lấy danh sách tất cả danh mục
 export const getAllCategories = async (req, res) => {
   try {

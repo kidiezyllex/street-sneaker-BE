@@ -10,13 +10,13 @@ import { Router } from 'express';
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
-import statRoutes from "./routes/stat.routes.js";
+import * as statRoutes from './routes/stat.routes.js';
 import productRoutes from "./routes/product.routes.js";
 import cartRoutes from "./routes/cart.routes.js";
 import promotionRoutes from "./routes/promotion.routes.js";
 import voucherRoutes from "./routes/voucher.routes.js";
 import billRoutes from "./routes/bill.routes.js";
-import accountRoutes from "./routes/account.routes.js";
+import * as accountRoutes from './routes/account.routes.js';
 
 const router = Router();
 export async function registerRoutes(app: Express): Promise<Server> {

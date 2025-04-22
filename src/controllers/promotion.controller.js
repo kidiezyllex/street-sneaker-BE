@@ -1,4 +1,5 @@
 import { Promotion, Voucher } from '../models/index.js';
+import { validateVoucher, validateProductPromotion } from '../utils/validation';
 
 /**
  * Lấy danh sách tất cả khuyến mãi có phân trang
@@ -414,102 +415,30 @@ export const getVoucherById = async (req, res) => {
 // Tạo voucher mới
 export const createVoucher = async (req, res) => {
   try {
-    const { name, value, maximumValue, type, typeValue, minimumAmount, quantity, startDate, endDate } = req.body;
-    
-    // Kiểm tra tên voucher đã tồn tại chưa
-    const existingVoucher = await Voucher.findOne({ name });
-    
-    if (existingVoucher) {
-      return res.status(400).json({
-        success: false,
-        message: 'Tên voucher đã tồn tại'
-      });
-    }
-    
-    // Tạo voucher mới (code tự động tạo trong pre-save)
-    const newVoucher = new Voucher({
-      name,
-      value,
-      maximumValue,
-      type,
-      typeValue,
-      minimumAmount,
-      quantity,
-      startDate,
-      endDate,
-      customers: []
-    });
-    
-    await newVoucher.save();
-    
-    return res.status(201).json({
-      success: true,
-      message: 'Tạo voucher thành công',
-      data: newVoucher
-    });
+    const validatedData = validateVoucher(req.body);
+    const voucher = new Voucher(validatedData);
+    await voucher.save();
+    res.status(201).json(voucher);
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Đã xảy ra lỗi khi tạo voucher',
-      error: error.message
-    });
+    res.status(400).json({ message: error.message });
   }
 };
 
 // Cập nhật voucher
 export const updateVoucher = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { name, value, maximumValue, type, typeValue, minimumAmount, quantity, startDate, endDate, status } = req.body;
-    
-    // Tìm voucher cần cập nhật
-    const voucher = await Voucher.findById(id);
-    
+    const validatedData = validateVoucher(req.body);
+    const voucher = await Voucher.findByIdAndUpdate(
+      req.params.id,
+      validatedData,
+      { new: true }
+    );
     if (!voucher) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy voucher'
-      });
+      return res.status(404).json({ message: 'Không tìm thấy mã giảm giá' });
     }
-    
-    // Kiểm tra nếu đổi tên thì cần kiểm tra tên mới đã tồn tại chưa
-    if (name && name !== voucher.name) {
-      const existingVoucher = await Voucher.findOne({ name });
-      
-      if (existingVoucher) {
-        return res.status(400).json({
-          success: false,
-          message: 'Tên voucher đã tồn tại'
-        });
-      }
-      
-      voucher.name = name;
-    }
-    
-    // Cập nhật thông tin voucher
-    if (value) voucher.value = value;
-    if (maximumValue) voucher.maximumValue = maximumValue;
-    if (type) voucher.type = type;
-    if (typeValue) voucher.typeValue = typeValue;
-    if (minimumAmount) voucher.minimumAmount = minimumAmount;
-    if (quantity) voucher.quantity = quantity;
-    if (startDate) voucher.startDate = startDate;
-    if (endDate) voucher.endDate = endDate;
-    if (status) voucher.status = status;
-    
-    await voucher.save();
-    
-    return res.status(200).json({
-      success: true,
-      message: 'Cập nhật voucher thành công',
-      data: voucher
-    });
+    res.json(voucher);
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Đã xảy ra lỗi khi cập nhật voucher',
-      error: error.message
-    });
+    res.status(400).json({ message: error.message });
   }
 };
 
@@ -597,6 +526,214 @@ export const removeCustomerFromVoucher = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi xóa khách hàng khỏi voucher',
+      error: error.message
+    });
+  }
+};
+
+// =================== Product Promotion Controller ===================
+
+// Tạo khuyến mãi sản phẩm
+export const createProductPromotion = async (req, res) => {
+  try {
+    const validatedData = validateProductPromotion(req.body);
+    const promotion = new ProductPromotion(validatedData);
+    await promotion.save();
+    res.status(201).json(promotion);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Lấy danh sách khuyến mãi sản phẩm
+export const getProductPromotions = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, status } = req.query;
+    const query = status ? { status } : {};
+    
+    const promotions = await ProductPromotion.find(query)
+      .populate('productId')
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .exec();
+
+    const count = await ProductPromotion.countDocuments(query);
+    
+    res.json({
+      promotions,
+      totalPages: Math.ceil(count / limit),
+      currentPage: page
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Tìm kiếm khuyến mãi sản phẩm
+export const searchProductPromotions = async (req, res) => {
+  try {
+    const {
+      query,
+      status,
+      minDiscount,
+      maxDiscount,
+      page = 1,
+      limit = 10
+    } = req.query;
+
+    let searchQuery = {};
+    if (query) {
+      searchQuery.$or = [
+        { name: { $regex: query, $options: 'i' } },
+        { description: { $regex: query, $options: 'i' } }
+      ];
+    }
+    if (status) searchQuery.status = status;
+    if (minDiscount || maxDiscount) {
+      searchQuery.discountValue = {};
+      if (minDiscount) searchQuery.discountValue.$gte = Number(minDiscount);
+      if (maxDiscount) searchQuery.discountValue.$lte = Number(maxDiscount);
+    }
+
+    const promotions = await ProductPromotion.find(searchQuery)
+      .populate('productId')
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .exec();
+
+    const count = await ProductPromotion.countDocuments(searchQuery);
+
+    res.json({
+      promotions,
+      totalPages: Math.ceil(count / limit),
+      currentPage: page
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Tìm kiếm voucher
+export const searchVouchers = async (req, res) => {
+  try {
+    const { 
+      query,
+      type,
+      status,
+      minDiscount,
+      maxDiscount,
+      page = 1,
+      limit = 10
+    } = req.query;
+
+    let searchQuery = {};
+    if (query) {
+      searchQuery.$or = [
+        { code: { $regex: query, $options: 'i' } },
+        { name: { $regex: query, $options: 'i' } }
+      ];
+    }
+    if (type) searchQuery.type = type;
+    if (status) searchQuery.status = status;
+    if (minDiscount || maxDiscount) {
+      searchQuery.discountValue = {};
+      if (minDiscount) searchQuery.discountValue.$gte = Number(minDiscount);
+      if (maxDiscount) searchQuery.discountValue.$lte = Number(maxDiscount);
+    }
+
+    const vouchers = await Voucher.find(searchQuery)
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .exec();
+
+    const count = await Voucher.countDocuments(searchQuery);
+
+    res.json({
+      vouchers,
+      totalPages: Math.ceil(count / limit),
+      currentPage: page
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Xóa khuyến mãi sản phẩm
+export const deleteProductPromotion = async (req, res) => {
+  try {
+    const promotion = await ProductPromotion.findById(req.params.id);
+
+    if (!promotion) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy khuyến mãi sản phẩm'
+      });
+    }
+
+    // Ẩn khuyến mãi thay vì xóa
+    promotion.status = 'NGUNG_HOAT_DONG';
+    await promotion.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Xóa khuyến mãi sản phẩm thành công'
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Đã xảy ra lỗi khi xóa khuyến mãi sản phẩm',
+      error: error.message
+    });
+  }
+};
+
+// Cập nhật khuyến mãi sản phẩm
+export const updateProductPromotion = async (req, res) => {
+  try {
+    const { name, description, discountType, discountValue, startDate, endDate, status } = req.body;
+    const promotion = await ProductPromotion.findById(req.params.id);
+
+    if (!promotion) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy khuyến mãi sản phẩm'
+      });
+    }
+
+    // Cập nhật thông tin khuyến mãi
+    if (name) promotion.name = name;
+    if (description) promotion.description = description;
+    if (discountType) promotion.discountType = discountType;
+    if (discountValue) {
+      if (discountType === 'PHAN_TRAM' && (discountValue <= 0 || discountValue > 100)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Giá trị phần trăm phải nằm trong khoảng (0, 100]'
+        });
+      }
+      if (discountType === 'TIEN_MAT' && discountValue <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Giá trị tiền mặt phải lớn hơn 0'
+        });
+      }
+      promotion.discountValue = discountValue;
+    }
+    if (startDate) promotion.startDate = startDate;
+    if (endDate) promotion.endDate = endDate;
+    if (status) promotion.status = status;
+
+    await promotion.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Cập nhật khuyến mãi sản phẩm thành công',
+      data: promotion
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Đã xảy ra lỗi khi cập nhật khuyến mãi sản phẩm',
       error: error.message
     });
   }

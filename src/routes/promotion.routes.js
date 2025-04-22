@@ -5,7 +5,16 @@ import {
   createPromotion,
   updatePromotion,
   deletePromotion,
-  getActivePromotions
+  getActivePromotions,
+  createVoucher,
+  getVoucherById,
+  updateVoucher,
+  createProductPromotion,
+  getProductPromotions,
+  updateProductPromotion,
+  searchVouchers,
+  searchProductPromotions,
+  deleteProductPromotion
 } from '../controllers/promotion.controller.js';
 import { protect, admin, staff } from '../middlewares/auth.middleware.js';
 
@@ -274,5 +283,20 @@ router.delete('/:id', protect, admin, deletePromotion);
  *                     $ref: '#/components/schemas/Promotion'
  */
 router.get('/active', getActivePromotions);
+
+// Quản lý mã giảm giá
+router.post('/vouchers', protect, admin, createVoucher);
+router.get('/vouchers/:id', protect, getVoucherById);
+router.put('/vouchers/:id', protect, admin, updateVoucher);
+
+// Quản lý khuyến mãi sản phẩm
+router.post('/product-promotions', protect, admin, createProductPromotion);
+router.get('/product-promotions', protect, getProductPromotions);
+router.put('/product-promotions/:id', protect, admin, updateProductPromotion);
+router.delete('/product-promotions/:id', protect, admin, deleteProductPromotion);
+
+// Lọc và tìm kiếm
+router.get('/vouchers/search', searchVouchers);
+router.get('/product-promotions/search', searchProductPromotions);
 
 export default router; 

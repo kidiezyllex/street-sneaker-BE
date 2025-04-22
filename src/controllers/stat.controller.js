@@ -340,77 +340,65 @@ export const getCustomerStat = async (req, res) => {
  */
 export const getOverviewStats = async (req, res) => {
   try {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const today = new Date();
+    const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(today.setHours(23, 59, 59, 999));
 
-    // Thống kê đơn hàng
-    const totalOrders = await Bill.countDocuments();
-    const todayOrders = await Bill.countDocuments({ createdAt: { $gte: today } });
-    const monthOrders = await Bill.countDocuments({ createdAt: { $gte: startOfMonth } });
-    const yearOrders = await Bill.countDocuments({ createdAt: { $gte: startOfYear } });
-
-    // Thống kê doanh thu
-    const totalRevenue = await Bill.aggregate([
-      { $match: { status: 'DA_THANH_TOAN' } },
-      { $group: { _id: null, total: { $sum: '$moneyAfter' } } }
+    // Doanh thu hôm nay
+    const todayRevenue = await Order.aggregate([
+      {
+        $match: {
+          status: 'COMPLETED',
+          completedAt: {
+            $gte: startOfDay,
+            $lte: endOfDay
+          }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: '$totalAmount' }
+        }
+      }
     ]);
 
-    const todayRevenue = await Bill.aggregate([
-      { $match: { status: 'DA_THANH_TOAN', createdAt: { $gte: today } } },
-      { $group: { _id: null, total: { $sum: '$moneyAfter' } } }
-    ]);
-
-    const monthRevenue = await Bill.aggregate([
-      { $match: { status: 'DA_THANH_TOAN', createdAt: { $gte: startOfMonth } } },
-      { $group: { _id: null, total: { $sum: '$moneyAfter' } } }
-    ]);
-
-    const yearRevenue = await Bill.aggregate([
-      { $match: { status: 'DA_THANH_TOAN', createdAt: { $gte: startOfYear } } },
-      { $group: { _id: null, total: { $sum: '$moneyAfter' } } }
-    ]);
-
-    // Thống kê sản phẩm và khách hàng
-    const totalProducts = await Product.countDocuments();
-    const totalCustomers = await Account.countDocuments({ role: 'CUSTOMER' });
-
-    // Đơn hàng theo trạng thái
-    const ordersByStatus = await Bill.aggregate([
-      { $group: { _id: '$status', count: { $sum: 1 } } }
-    ]);
-
-    return res.status(200).json({
-      success: true,
-      message: 'Lấy thống kê tổng quan thành công',
-      data: {
-        orders: {
-          total: totalOrders,
-          today: todayOrders,
-          month: monthOrders,
-          year: yearOrders
-        },
-        revenue: {
-          total: totalRevenue.length > 0 ? totalRevenue[0].total : 0,
-          today: todayRevenue.length > 0 ? todayRevenue[0].total : 0,
-          month: monthRevenue.length > 0 ? monthRevenue[0].total : 0,
-          year: yearRevenue.length > 0 ? yearRevenue[0].total : 0
-        },
-        products: totalProducts,
-        customers: totalCustomers,
-        ordersByStatus: ordersByStatus.reduce((acc, curr) => {
-          acc[curr._id] = curr.count;
-          return acc;
-        }, {})
+    // Đơn hàng hôm nay
+    const todayOrders = await Order.countDocuments({
+      createdAt: {
+        $gte: startOfDay,
+        $lte: endOfDay
       }
     });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Đã xảy ra lỗi khi lấy thống kê tổng quan',
-      error: error.message
+
+    // Sản phẩm sắp hết hàng
+    const lowStockProducts = await Product.aggregate([
+      { $unwind: '$variants' },
+      {
+        $match: {
+          'variants.stock': { $lt: 10 }
+        }
+      },
+      { $count: 'total' }
+    ]);
+
+    // Khách hàng mới
+    const newCustomers = await User.countDocuments({
+      role: 'CUSTOMER',
+      createdAt: {
+        $gte: startOfDay,
+        $lte: endOfDay
+      }
     });
+
+    res.json({
+      todayRevenue: todayRevenue[0]?.total || 0,
+      todayOrders,
+      lowStockProducts: lowStockProducts[0]?.total || 0,
+      newCustomers
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 };
 
@@ -706,110 +694,114 @@ export const getPotentialCustomers = async (req, res) => {
  */
 export const getGrowthStats = async (req, res) => {
   try {
-    const now = new Date();
-    
-    // Tính toán thời gian
-    const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    // const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1); // Không sử dụng
-    
-    const thisYear = new Date(now.getFullYear(), 0, 1);
-    const lastYear = new Date(now.getFullYear() - 1, 0, 1);
-    
-    // Thống kê doanh thu theo tháng
-    const [thisMonthRevenue, lastMonthRevenue, thisYearRevenue, lastYearRevenue] = await Promise.all([
-      Bill.aggregate([
-        { $match: { status: 'DA_THANH_TOAN', createdAt: { $gte: thisMonth } } },
-        { $group: { _id: null, total: { $sum: '$moneyAfter' } } }
-      ]),
-      Bill.aggregate([
-        { $match: { status: 'DA_THANH_TOAN', createdAt: { $gte: lastMonth, $lt: thisMonth } } },
-        { $group: { _id: null, total: { $sum: '$moneyAfter' } } }
-      ]),
-      Bill.aggregate([
-        { $match: { status: 'DA_THANH_TOAN', createdAt: { $gte: thisYear } } },
-        { $group: { _id: null, total: { $sum: '$moneyAfter' } } }
-      ]),
-      Bill.aggregate([
-        { $match: { status: 'DA_THANH_TOAN', createdAt: { $gte: lastYear, $lt: thisYear } } },
-        { $group: { _id: null, total: { $sum: '$moneyAfter' } } }
-      ])
-    ]);
-    
-    // Thống kê số đơn hàng theo tháng
-    const [thisMonthOrders, lastMonthOrders, thisYearOrders, lastYearOrders] = await Promise.all([
-      Bill.countDocuments({ createdAt: { $gte: thisMonth } }),
-      Bill.countDocuments({ createdAt: { $gte: lastMonth, $lt: thisMonth } }),
-      Bill.countDocuments({ createdAt: { $gte: thisYear } }),
-      Bill.countDocuments({ createdAt: { $gte: lastYear, $lt: thisYear } })
-    ]);
-    
-    // Thống kê số khách hàng mới theo tháng
-    const [thisMonthCustomers, lastMonthCustomers, thisYearCustomers, lastYearCustomers] = await Promise.all([
-      Account.countDocuments({ role: 'CUSTOMER', createdAt: { $gte: thisMonth } }),
-      Account.countDocuments({ role: 'CUSTOMER', createdAt: { $gte: lastMonth, $lt: thisMonth } }),
-      Account.countDocuments({ role: 'CUSTOMER', createdAt: { $gte: thisYear } }),
-      Account.countDocuments({ role: 'CUSTOMER', createdAt: { $gte: lastYear, $lt: thisYear } })
-    ]);
-    
-    // Tính tỷ lệ tăng trưởng
-    const calculateGrowth = (current, previous) => {
-      if (previous === 0) return current > 0 ? 100 : 0;
-      return ((current - previous) / previous) * 100;
-    };
-    
-    const thisMonthRevenueValue = thisMonthRevenue.length > 0 ? thisMonthRevenue[0].total : 0;
-    const lastMonthRevenueValue = lastMonthRevenue.length > 0 ? lastMonthRevenue[0].total : 0;
-    const thisYearRevenueValue = thisYearRevenue.length > 0 ? thisYearRevenue[0].total : 0;
-    const lastYearRevenueValue = lastYearRevenue.length > 0 ? lastYearRevenue[0].total : 0;
-    
-    return res.status(200).json({
-      success: true,
-      message: 'Lấy thống kê tăng trưởng thành công',
-      data: {
-        revenue: {
-          month: {
-            current: thisMonthRevenueValue,
-            previous: lastMonthRevenueValue,
-            growth: calculateGrowth(thisMonthRevenueValue, lastMonthRevenueValue)
-          },
-          year: {
-            current: thisYearRevenueValue,
-            previous: lastYearRevenueValue,
-            growth: calculateGrowth(thisYearRevenueValue, lastYearRevenueValue)
-          }
-        },
-        orders: {
-          month: {
-            current: thisMonthOrders,
-            previous: lastMonthOrders,
-            growth: calculateGrowth(thisMonthOrders, lastMonthOrders)
-          },
-          year: {
-            current: thisYearOrders,
-            previous: lastYearOrders,
-            growth: calculateGrowth(thisYearOrders, lastYearOrders)
-          }
-        },
-        customers: {
-          month: {
-            current: thisMonthCustomers,
-            previous: lastMonthCustomers,
-            growth: calculateGrowth(thisMonthCustomers, lastMonthCustomers)
-          },
-          year: {
-            current: thisYearCustomers,
-            previous: lastYearCustomers,
-            growth: calculateGrowth(thisYearCustomers, lastYearCustomers)
-          }
+    const today = new Date();
+    const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    // Doanh thu
+    const revenueGrowth = await Order.aggregate([
+      {
+        $match: {
+          status: 'COMPLETED',
+          completedAt: { $gte: lastMonth }
         }
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$completedAt' },
+            month: { $month: '$completedAt' }
+          },
+          revenue: { $sum: '$totalAmount' }
+        }
+      }
+    ]);
+
+    // Đơn hàng
+    const orderGrowth = await Order.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: lastMonth }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' }
+          },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Khách hàng
+    const customerGrowth = await User.aggregate([
+      {
+        $match: {
+          role: 'CUSTOMER',
+          createdAt: { $gte: lastMonth }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' }
+          },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Tính tỷ lệ tăng trưởng
+    const calculateGrowth = (currentValue, previousValue) => {
+      if (previousValue === 0) return 100;
+      return ((currentValue - previousValue) / previousValue) * 100;
+    };
+
+    const lastMonthRevenue = revenueGrowth.find(
+      r => r._id.year === lastMonth.getFullYear() && r._id.month === lastMonth.getMonth() + 1
+    )?.revenue || 0;
+
+    const thisMonthRevenue = revenueGrowth.find(
+      r => r._id.year === thisMonth.getFullYear() && r._id.month === thisMonth.getMonth() + 1
+    )?.revenue || 0;
+
+    const lastMonthOrders = orderGrowth.find(
+      r => r._id.year === lastMonth.getFullYear() && r._id.month === lastMonth.getMonth() + 1
+    )?.count || 0;
+
+    const thisMonthOrders = orderGrowth.find(
+      r => r._id.year === thisMonth.getFullYear() && r._id.month === thisMonth.getMonth() + 1
+    )?.count || 0;
+
+    const lastMonthCustomers = customerGrowth.find(
+      r => r._id.year === lastMonth.getFullYear() && r._id.month === lastMonth.getMonth() + 1
+    )?.count || 0;
+
+    const thisMonthCustomers = customerGrowth.find(
+      r => r._id.year === thisMonth.getFullYear() && r._id.month === thisMonth.getMonth() + 1
+    )?.count || 0;
+
+    res.json({
+      revenue: {
+        growth: calculateGrowth(thisMonthRevenue, lastMonthRevenue),
+        current: thisMonthRevenue,
+        previous: lastMonthRevenue
+      },
+      orders: {
+        growth: calculateGrowth(thisMonthOrders, lastMonthOrders),
+        current: thisMonthOrders,
+        previous: lastMonthOrders
+      },
+      customers: {
+        growth: calculateGrowth(thisMonthCustomers, lastMonthCustomers),
+        current: thisMonthCustomers,
+        previous: lastMonthCustomers
       }
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Đã xảy ra lỗi khi lấy thống kê tăng trưởng',
-      error: error.message
-    });
+    res.status(400).json({ message: error.message });
   }
 }; 
