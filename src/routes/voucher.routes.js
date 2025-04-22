@@ -9,8 +9,7 @@ import {
   removeCustomerFromVoucher,
   checkVoucher,
   getCustomerVouchers,
-  getActiveVouchers,
-  applyVoucher
+  getActiveVouchers
 } from '../controllers/voucher.controller.js';
 import { protect, admin, staff } from '../middlewares/auth.middleware.js';
 
@@ -287,9 +286,9 @@ router.get('/active', getActiveVouchers);
 
 /**
  * @swagger
- * /vouchers/apply:
+ * /vouchers/check:
  *   post:
- *     summary: Áp dụng voucher
+ *     summary: Kiểm tra và áp dụng voucher
  *     tags: [Vouchers]
  *     security:
  *       - bearerAuth: []
@@ -311,7 +310,7 @@ router.get('/active', getActiveVouchers);
  *                 description: Tổng giá trị đơn hàng
  *     responses:
  *       200:
- *         description: Áp dụng voucher thành công
+ *         description: Kiểm tra voucher thành công
  *         content:
  *           application/json:
  *             schema:
@@ -322,7 +321,7 @@ router.get('/active', getActiveVouchers);
  *                   example: true
  *                 message:
  *                   type: string
- *                   example: Áp dụng voucher thành công
+ *                   example: Kiểm tra voucher thành công
  *                 data:
  *                   type: object
  *                   properties:
@@ -337,7 +336,7 @@ router.get('/active', getActiveVouchers);
  *       401:
  *         description: Không được phép
  */
-router.post('/apply', protect, applyVoucher);
+router.post('/check', protect, checkVoucher);
 
 // Routes quản lý khách hàng và voucher
 router.post('/:id/customers', protect, staff, addCustomerToVoucher);
