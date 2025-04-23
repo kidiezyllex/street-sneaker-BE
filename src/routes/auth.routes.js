@@ -27,79 +27,9 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             required:
- *               - username
- *               - password
- *             properties:
- *               username:
- *                 type: string
- *               password:
- *                 type: string
- *     responses:
- *       200:
- *         description: Đăng nhập thành công
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: Đăng nhập thành công
- *                 data:
- *                   type: object
- *                   properties:
- *                     _id:
- *                       type: string
- *                     username:
- *                       type: string
- *                     fullName:
- *                       type: string
- *                     email:
- *                       type: string
- *                     password:
- *                       type: string
- *                     role:
- *                       type: string
- *                     token:
- *                       type: string
- *                 errors:
- *                   type: object
- *                 timestamp:
- *                   type: string
- *                   format: date-time
- *       401:
- *         description: Thông tin đăng nhập không hợp lệ
- */
-router.post('/login', login);
-
-/**
- * @swagger
- * /auth/register:
- *   post:
- *     summary: Đăng ký người dùng mới
- *     description: Đăng ký người dùng mới. employeeId sẽ được tạo tự động.
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - username
- *               - fullName
  *               - email
  *               - password
  *             properties:
- *               username:
- *                 type: string
- *                 description: Tên đăng nhập duy nhất
- *               fullName:
- *                 type: string
- *                 description: Họ tên đầy đủ
  *               email:
  *                 type: string
  *                 format: email
@@ -108,11 +38,92 @@ router.post('/login', login);
  *                 type: string
  *                 format: password
  *                 description: Mật khẩu
- *               role:
+ *     responses:
+ *       200:
+ *         description: Đăng nhập thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Đăng nhập thành công
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     token:
+ *                       type: string
+ *                       description: JWT token
+ *                     account:
+ *                       type: object
+ *                       properties:
+ *                         _id:
+ *                           type: string
+ *                         code:
+ *                           type: string
+ *                         fullName:
+ *                           type: string
+ *                         email:
+ *                           type: string
+ *                           format: email
+ *                         phoneNumber:
+ *                           type: string
+ *                         role:
+ *                           type: string
+ *                         avatar:
+ *                           type: string
+ *                 errors:
+ *                   type: object
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *       401:
+ *         description: Mật khẩu không chính xác
+ *       403:
+ *         description: Tài khoản đã bị khóa
+ *       404:
+ *         description: Email không tồn tại
+ *       500:
+ *         description: Lỗi máy chủ
+ */
+router.post('/login', login);
+
+/**
+ * @swagger
+ * /auth/register:
+ *   post:
+ *     summary: Đăng ký người dùng mới
+ *     description: Đăng ký người dùng mới. Mặc định vai trò là CUSTOMER.
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - fullName
+ *               - email
+ *               - password
+ *             properties:
+ *               fullName:
  *                 type: string
- *                 enum: [employee, admin]
- *                 default: employee
- *                 description: Vai trò người dùng
+ *                 description: Họ tên đầy đủ
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Địa chỉ email (duy nhất)
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 description: Mật khẩu
+ *               phoneNumber:
+ *                 type: string
+ *                 description: Số điện thoại (duy nhất nếu có)
  *     responses:
  *       201:
  *         description: Đăng ký thành công
@@ -121,36 +132,43 @@ router.post('/login', login);
  *             schema:
  *               type: object
  *               properties:
- *                 status:
+ *                 success:
  *                   type: boolean
  *                   example: true
  *                 message:
  *                   type: string
- *                   example: Đăng ký thành công
+ *                   example: Đăng ký tài khoản thành công
  *                 data:
  *                   type: object
  *                   properties:
- *                     _id:
- *                       type: string
- *                     username:
- *                       type: string
- *                     fullName:
- *                       type: string
- *                     email:
- *                       type: string
- *                     password:
- *                       type: string
- *                     role:
- *                       type: string
  *                     token:
  *                       type: string
+ *                       description: JWT token
+ *                     account:
+ *                       type: object
+ *                       properties:
+ *                         _id:
+ *                           type: string
+ *                         code:
+ *                           type: string
+ *                         fullName:
+ *                           type: string
+ *                         email:
+ *                           type: string
+ *                           format: email
+ *                         phoneNumber:
+ *                           type: string
+ *                         role:
+ *                           type: string
  *                 errors:
  *                   type: object
  *                 timestamp:
  *                   type: string
  *                   format: date-time
  *       400:
- *         description: Dữ liệu không hợp lệ hoặc người dùng đã tồn tại
+ *         description: Email hoặc số điện thoại đã được sử dụng
+ *       500:
+ *         description: Lỗi máy chủ
  */
 router.post('/register', register);
 
@@ -158,63 +176,94 @@ router.post('/register', register);
  * @swagger
  * /auth/profile:
  *   get:
- *     summary: Lấy thông tin người dùng
+ *     summary: Lấy thông tin tài khoản hiện tại
  *     tags: [Auth]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Thông tin người dùng
+ *         description: Thông tin tài khoản
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 status:
+ *                 success:
  *                   type: boolean
  *                   example: true
  *                 message:
  *                   type: string
- *                   example: Lấy thông tin người dùng thành công
+ *                   example: Lấy thông tin tài khoản thành công
  *                 data:
  *                   type: object
+ *                   description: Thông tin chi tiết của tài khoản (trừ mật khẩu)
  *                   properties:
  *                     _id:
  *                       type: string
- *                     username:
+ *                     code:
  *                       type: string
  *                     fullName:
  *                       type: string
  *                     email:
  *                       type: string
- *                     role:
+ *                       format: email
+ *                     phoneNumber:
  *                       type: string
- *                     avatar:
- *                       type: string
- *                     department:
- *                       type: string
- *                     position:
- *                       type: string
- *                     skills:
- *                       type: array
- *                       items:
- *                         type: string
- *                     bio:
- *                       type: string
- *                     joinDate:
+ *                     birthday:
  *                       type: string
  *                       format: date-time
- *                     employeeId:
+ *                     gender:
+ *                       type: boolean
+ *                       description: Giới tính (true: Nam, false: Nữ)
+ *                     avatar:
  *                       type: string
+ *                     role:
+ *                       type: string
+ *                     status:
+ *                       type: string
+ *                       enum: [HOAT_DONG, KHONG_HOAT_DONG]
+ *                     addresses:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           _id:
+ *                             type: string
+ *                           name:
+ *                             type: string
+ *                           phoneNumber:
+ *                             type: string
+ *                           provinceId:
+ *                             type: string
+ *                           districtId:
+ *                             type: string
+ *                           wardId:
+ *                             type: string
+ *                           specificAddress:
+ *                             type: string
+ *                           type:
+ *                             type: boolean
+ *                             description: Loại địa chỉ (true: Công ty, false: Nhà riêng)
+ *                           isDefault:
+ *                             type: boolean
+ *                             description: Địa chỉ mặc định
+ *                     createdAt:
+ *                       type: string
+ *                       format: date-time
+ *                     updatedAt:
+ *                       type: string
+ *                       format: date-time
  *                 errors:
  *                   type: object
  *                 timestamp:
  *                   type: string
  *                   format: date-time
  *       401:
- *         description: Không được phép truy cập
+ *         description: Không được phép truy cập (Token không hợp lệ hoặc thiếu)
  *       404:
- *         description: Không tìm thấy người dùng
+ *         description: Không tìm thấy tài khoản
+ *       500:
+ *         description: Lỗi máy chủ
  */
 router.get('/profile', protect, getCurrentAccount);
 
@@ -238,11 +287,26 @@ router.get('/profile', protect, getCurrentAccount);
  *             properties:
  *               currentPassword:
  *                 type: string
+ *                 format: password
+ *                 description: Mật khẩu hiện tại
  *               newPassword:
  *                 type: string
+ *                 format: password
+ *                 description: Mật khẩu mới
  *     responses:
  *       200:
  *         description: Thay đổi mật khẩu thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Thay đổi mật khẩu thành công
  *       401:
  *         description: Mật khẩu hiện tại không chính xác
  *       500:
@@ -273,12 +337,29 @@ router.put('/change-password', protect, changePassword);
  *                 type: string
  *                 format: date
  *               gender:
- *                 type: string
+ *                 type: boolean
+ *                 description: Giới tính (true: Nam, false: Nữ)
  *               avatar:
  *                 type: string
  *     responses:
  *       200:
  *         description: Cập nhật thông tin thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Cập nhật thông tin tài khoản thành công
+ *                 data:
+ *                   type: object
+ *                   $ref: '#/components/schemas/Account'
+ *       401:
+ *         description: Không được phép truy cập
  *       404:
  *         description: Không tìm thấy tài khoản
  *       500:
@@ -310,23 +391,50 @@ router.put('/update-profile', protect, updateProfile);
  *             properties:
  *               name:
  *                 type: string
+ *                 description: Tên người nhận
  *               phoneNumber:
  *                 type: string
+ *                 description: Số điện thoại người nhận
  *               provinceId:
  *                 type: string
+ *                 description: ID Tỉnh/Thành phố
  *               districtId:
  *                 type: string
+ *                 description: ID Quận/Huyện
  *               wardId:
  *                 type: string
+ *                 description: ID Phường/Xã
  *               specificAddress:
  *                 type: string
+ *                 description: Địa chỉ cụ thể (số nhà, tên đường)
  *               type:
  *                 type: boolean
+ *                 description: Loại địa chỉ (true: Công ty, false: Nhà riêng - Mặc định false)
+ *                 default: false
  *               isDefault:
  *                 type: boolean
+ *                 description: Đặt làm địa chỉ mặc định (Mặc định false)
+ *                 default: false
  *     responses:
  *       201:
  *         description: Thêm địa chỉ thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Thêm địa chỉ mới thành công
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Address'
+ *       401:
+ *         description: Không được phép truy cập
  *       404:
  *         description: Không tìm thấy tài khoản
  *       500:
@@ -348,6 +456,7 @@ router.post('/address', protect, addAddress);
  *         required: true
  *         schema:
  *           type: string
+ *         description: ID của địa chỉ cần cập nhật
  *     requestBody:
  *       required: true
  *       content:
@@ -374,6 +483,23 @@ router.post('/address', protect, addAddress);
  *     responses:
  *       200:
  *         description: Cập nhật địa chỉ thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Cập nhật địa chỉ thành công
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Address'
+ *       401:
+ *         description: Không được phép truy cập
  *       404:
  *         description: Không tìm thấy tài khoản hoặc địa chỉ
  *       500:
@@ -395,9 +521,27 @@ router.put('/address/:addressId', protect, updateAddress);
  *         required: true
  *         schema:
  *           type: string
+ *         description: ID của địa chỉ cần xóa
  *     responses:
  *       200:
  *         description: Xóa địa chỉ thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Xóa địa chỉ thành công
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Address'
+ *       401:
+ *         description: Không được phép truy cập
  *       404:
  *         description: Không tìm thấy tài khoản hoặc địa chỉ
  *       500:
@@ -419,14 +563,104 @@ router.delete('/address/:addressId', protect, deleteAddress);
  *         required: true
  *         schema:
  *           type: string
+ *         description: ID của địa chỉ cần đặt làm mặc định
  *     responses:
  *       200:
  *         description: Đặt địa chỉ mặc định thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Đặt địa chỉ mặc định thành công
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Address'
+ *       401:
+ *         description: Không được phép truy cập
  *       404:
  *         description: Không tìm thấy tài khoản hoặc địa chỉ
  *       500:
  *         description: Lỗi máy chủ
  */
 router.put('/address/:addressId/default', protect, setDefaultAddress);
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Account:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *         code:
+ *           type: string
+ *         fullName:
+ *           type: string
+ *         email:
+ *           type: string
+ *           format: email
+ *         phoneNumber:
+ *           type: string
+ *         birthday:
+ *           type: string
+ *           format: date-time
+ *         gender:
+ *           type: boolean
+ *           description: Giới tính (true: Nam, false: Nữ)
+ *         avatar:
+ *           type: string
+ *         role:
+ *           type: string
+ *           enum: [CUSTOMER, ADMIN, STAFF]
+ *         status:
+ *           type: string
+ *           enum: [HOAT_DONG, KHONG_HOAT_DONG]
+ *         addresses:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/Address'
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *     Address:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *         name:
+ *           type: string
+ *         phoneNumber:
+ *           type: string
+ *         provinceId:
+ *           type: string
+ *         districtId:
+ *           type: string
+ *         wardId:
+ *           type: string
+ *         specificAddress:
+ *           type: string
+ *         type:
+ *           type: boolean
+ *           description: Loại địa chỉ (true: Công ty, false: Nhà riêng)
+ *         isDefault:
+ *           type: boolean
+ *           description: Địa chỉ mặc định
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ */
 
 export default router; 

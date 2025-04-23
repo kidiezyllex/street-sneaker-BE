@@ -94,8 +94,8 @@ export const createAccount = async (req, res) => {
     // Kiểm tra email hoặc số điện thoại đã tồn tại
     const existingAccount = await Account.findOne({
       $or: [
-        { email: email },
-        { phoneNumber: phoneNumber }
+        { email: email.trim() },
+        { phoneNumber: phoneNumber.trim() }
       ]
     });
     

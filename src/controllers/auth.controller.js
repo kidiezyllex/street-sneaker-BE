@@ -78,13 +78,14 @@ export const register = async (req, res) => {
   try {
     const { fullName, email, password, phoneNumber } = req.body;
 
+    // Xây dựng điều kiện truy vấn linh hoạt
+    const queryConditions = [{ email: email.trim() }];
+    if (phoneNumber && phoneNumber.trim()) {
+      queryConditions.push({ phoneNumber: phoneNumber.trim() });
+    }
+
     // Kiểm tra xem email hoặc số điện thoại đã tồn tại chưa
-    const existingAccount = await Account.findOne({
-      $or: [
-        { email },
-        { phoneNumber }
-      ]
-    });
+    const existingAccount = await Account.findOne({ $or: queryConditions });
 
     if (existingAccount) {
       return res.status(400).json({
@@ -94,14 +95,17 @@ export const register = async (req, res) => {
     }
 
     // Tạo tài khoản mới
-    const newAccount = new Account({
+    const accountData = {
       fullName,
       email,
       password,
-      phoneNumber,
       role: 'CUSTOMER', // Mặc định là khách hàng khi đăng ký
       addresses: []
-    });
+    };
+    if (phoneNumber) {
+      accountData.phoneNumber = phoneNumber;
+    }
+    const newAccount = new Account(accountData);
 
     await newAccount.save();
 
@@ -128,6 +132,7 @@ export const register = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Registration Error:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi đăng ký tài khoản',
