@@ -8,12 +8,16 @@ import { Router } from 'express';
 
 // Import routes
 import authRoutes from "./routes/auth.routes.js";
-import uploadRoutes from "./routes/upload.routes.js";
 import accountRoutes from './routes/account.routes.js';
-import orderRoutes from './routes/order.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
+import orderRoutes from './routes/order.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
-
+import uploadRoutes from "./routes/upload.routes.js";
+import statisticRoutes from './routes/statistic.routes.js';
+import voucherRoutes from './routes/voucher.routes.js';
+import productRoutes from './routes/product.routes.js';
+import promotionRoutes from './routes/promotion.routes.js';
+import returnRoutes from './routes/return.routes.js';
 const router = Router();
 export async function registerRoutes(app: Express): Promise<Server> {
   try {
@@ -27,7 +31,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     app.use("/api/orders", orderRoutes);
     app.use("/api/notifications", notificationRoutes);
     app.use("/api/payments", paymentRoutes);
-    
+    app.use("/api/statistics", statisticRoutes);
+    app.use("/api/vouchers", voucherRoutes);
+    app.use("/api/products", productRoutes);
+    app.use("/api/promotions", promotionRoutes);
+    app.use("/api/returns", returnRoutes);
     setupSwagger(app);
     app.get("/api/health", (req: Request, res: Response) => {
       res.status(200).json({ 
