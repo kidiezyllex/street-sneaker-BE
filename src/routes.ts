@@ -24,6 +24,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Connect to database
     await connectDB();
     
+    // Setup Swagger FIRST - before any error handlers
+    setupSwagger(app);
+    
+    // Thêm route kiểm tra trực tiếp cho swagger
+    app.get("/api-docs-test", (req: Request, res: Response) => {
+      res.status(200).json({ 
+        success: true, 
+        message: "Swagger route test is working"
+      });
+    });
+    
     // API routes
     app.use("/api/auth", authRoutes);
     app.use("/api/upload", uploadRoutes);
@@ -36,7 +47,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     app.use("/api/products", productRoutes);
     app.use("/api/promotions", promotionRoutes);
     app.use("/api/returns", returnRoutes);
-    setupSwagger(app);
+    
     app.get("/api/health", (req: Request, res: Response) => {
       res.status(200).json({ 
         status: "ok", 
@@ -44,6 +55,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     });
     
+    // Error handling middlewares LAST
     app.use(notFound);
     app.use(errorHandler);
     

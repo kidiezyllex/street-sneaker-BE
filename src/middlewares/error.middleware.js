@@ -10,14 +10,15 @@ export const notFound = (req, res, next) => {
 /**
  * Global error handler
  */
-export const errorHandler = (err, req, res) => {
+export const errorHandler = (err, req, res, next) => {
   const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
   
   res.status(statusCode).json({
-    message: err.message,
-    errors: {
-      stack: process.env.NODE_ENV === 'production' ? '🥞' : err.stack
-    },
-    data: {}
+    success: false,
+    message: err.message || 'Đã xảy ra lỗi',
+    data: {},
+    errors: process.env.NODE_ENV === 'production' ? {} : {
+      stack: err.stack
+    }
   });
 };

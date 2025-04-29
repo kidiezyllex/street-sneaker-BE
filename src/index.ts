@@ -52,26 +52,11 @@ app.use('/_next/image', (req: any, res: any, next: any) => {
   }
 });
 
-// Routes
+// Đăng ký routes (bao gồm cả Swagger UI)
 registerRoutes(app);
 
-// Error handling middleware
-app.use((err: any, req: any, res: any, next: any) => {
-  console.error(err.stack);
-  res.status(500).json({
-    success: false,
-    message: 'Internal Server Error',
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined
-  });
-});
-
-// Handle 404
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found'
-  });
-});
+// Lưu ý: Middleware xử lý lỗi và 404 đã được đăng ký trong registerRoutes
+// nên không cần đăng ký thêm middleware ở đây
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

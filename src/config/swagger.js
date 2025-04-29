@@ -16,8 +16,12 @@ const options = {
     },
     servers: [
       {
+        url: 'https://street-sneaker-be.onrender.com/api',
+        description: 'Production API Server',
+      },
+      {
         url: '/api',
-        description: 'API Server',
+        description: 'Local API Server',
       },
     ],
     components: {
@@ -43,8 +47,11 @@ const options = {
   },
   // Paths to the API docs
   apis: [
+    './src/routes/*.ts',
     './src/routes/*.js',
+    './src/models/*.ts',
     './src/models/*.js',
+    './src/controllers/*.ts',
     './src/controllers/*.js',
   ],
 };
@@ -57,8 +64,16 @@ const specs = swaggerJsdoc(options);
  * @param app Express application
  */
 export const setupSwagger = (app) => {
-  // Serve swagger docs
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
+  // Serve swagger docs - both with and without trailing slash
+  app.use('/api-docs', swaggerUi.serve);
+  app.get('/api-docs', swaggerUi.setup(specs, {
+    explorer: true,
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'street-sneaker BE API Documentation',
+  }));
+  
+  app.use('/api-docs/', swaggerUi.serve);
+  app.get('/api-docs/', swaggerUi.setup(specs, {
     explorer: true,
     customCss: '.swagger-ui .topbar { display: none }',
     customSiteTitle: 'street-sneaker BE API Documentation',
