@@ -604,7 +604,6 @@ export const deleteProductPromotion = async (req, res) => {
   }
 };
 
-// =================== Brand Controller ===================
 
 // Lấy danh sách tất cả thương hiệu
 export const getAllBrands = async (req, res) => {
@@ -704,8 +703,6 @@ export const updateBrand = async (req, res) => {
     });
   }
 };
-
-// ---------- QUẢN LÝ THUỘC TÍNH SẢN PHẨM ---------- //
 
 /**
  * Lấy danh sách danh mục

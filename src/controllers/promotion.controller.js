@@ -334,7 +334,6 @@ export const getActivePromotions = async (req, res) => {
   }
 };
 
-// =================== Voucher Controller ===================
 
 // Lấy danh sách voucher với phân trang và lọc
 export const getAllVouchers = async (req, res) => {
@@ -531,8 +530,6 @@ export const removeCustomerFromVoucher = async (req, res) => {
     });
   }
 };
-
-// =================== Product Promotion Controller ===================
 
 // Tạo khuyến mãi sản phẩm
 export const createProductPromotion = async (req, res) => {
