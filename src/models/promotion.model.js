@@ -4,21 +4,23 @@ const promotionSchema = new mongoose.Schema({
   code: {
     type: String,
     unique: true,
-    required: true
+    trim: true,
   },
   name: {
     type: String,
     required: true
   },
-  type: {
-    type: String,
-    enum: ['TIEN_MAT', 'PHAN_TRAM'],
-    required: true
-  },
-  value: {
+  description: String,
+  discountPercent: {
     type: Number,
-    required: true
+    required: true,
+    min: 0,
+    max: 100
   },
+  products: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Product'
+  }],
   startDate: {
     type: Date,
     required: true
@@ -29,26 +31,22 @@ const promotionSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['DANG_HOAT_DONG', 'NGUNG_HOAT_DONG', 'SAP_DIEN_RA', 'DA_KET_THUC'],
-    default: 'SAP_DIEN_RA'
-  },
-  description: {
-    type: String
+    enum: ['HOAT_DONG', 'KHONG_HOAT_DONG'],
+    default: 'HOAT_DONG'
   }
 }, {
   timestamps: true
 });
 
-// Tạo mã khuyến mãi tự động
+// Tạo code tự động
 promotionSchema.pre('save', async function(next) {
   try {
     if (this.isNew && !this.code) {
       const count = await mongoose.models.Promotion.countDocuments();
-      const prefix = 'KM';
       const date = new Date();
-      const month = (date.getMonth() + 1).toString().padStart(2, '0');
       const year = date.getFullYear().toString().slice(-2);
-      this.code = `${prefix}${month}${year}${(count + 1).toString().padStart(4, '0')}`;
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      this.code = `KM${year}${month}${(count + 1).toString().padStart(4, '0')}`;
     }
     next();
   } catch (error) {
@@ -56,21 +54,6 @@ promotionSchema.pre('save', async function(next) {
   }
 });
 
-// Cập nhật trạng thái khuyến mãi tự động dựa vào thời gian
-promotionSchema.pre('save', function(next) {
-  const now = new Date();
-  
-  if (this.endDate < now) {
-    this.status = 'DA_KET_THUC';
-  } else if (this.startDate > now) {
-    this.status = 'SAP_DIEN_RA';
-  } else if (this.status !== 'NGUNG_HOAT_DONG') {
-    this.status = 'DANG_HOAT_DONG';
-  }
-  
-  next();
-});
-
 const Promotion = mongoose.model('Promotion', promotionSchema);
 
-export default Promotion; 
+export default Promotion;

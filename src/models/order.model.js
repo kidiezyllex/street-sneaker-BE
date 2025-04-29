@@ -1,86 +1,97 @@
 import mongoose from 'mongoose';
 
-const orderItemSchema = new mongoose.Schema({
-  productId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Product',
-    required: true
-  },
-  name: {
-    type: String,
-    required: true
-  },
-  price: {
-    type: Number,
-    required: true
-  },
-  quantity: {
-    type: Number,
-    required: true,
-    default: 1
-  }
-}, { _id: true });
-
 const orderSchema = new mongoose.Schema({
-  orderCode: {
+  code: {
     type: String,
     unique: true,
-    required: true,
+    trim: true,
   },
-  account: {
+  customer: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Account',
     required: true
   },
-  items: [orderItemSchema],
-  totalPrice: {
+  staff: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Account'
+  },
+  items: [{
+    product: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Product',
+      required: true
+    },
+    variant: {
+      colorId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Color'
+      },
+      sizeId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Size'
+      }
+    },
+    quantity: {
+      type: Number,
+      required: true
+    },
+    price: {
+      type: Number,
+      required: true
+    }
+  }],
+  voucher: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Voucher'
+  },
+  subTotal: {
     type: Number,
     required: true
   },
-  status: {
-    type: String,
-    enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'],
-    default: 'Pending'
+  discount: {
+    type: Number,
+    default: 0
   },
-  paymentMethod: {
-    type: String,
-    enum: ['Cash', 'Card', 'Transfer', 'E-wallet'],
+  total: {
+    type: Number,
     required: true
   },
   shippingAddress: {
-    address: { type: String, required: true },
-    city: { type: String, required: true },
-    postalCode: { type: String, required: true },
-    country: { type: String, required: true }
+    name: String,
+    phoneNumber: String,
+    provinceId: String,
+    districtId: String,
+    wardId: String,
+    specificAddress: String
   },
-  isPaid: {
-    type: Boolean,
-    default: false
+  paymentMethod: {
+    type: String,
+    enum: ['CASH', 'BANK_TRANSFER', 'COD', 'MIXED'],
+    required: true
   },
-  paidAt: {
-    type: Date
+  paymentStatus: {
+    type: String,
+    enum: ['PENDING', 'PARTIAL_PAID', 'PAID'],
+    default: 'PENDING'
   },
-  isDelivered: {
-    type: Boolean,
-    default: false
-  },
-  deliveredAt: {
-    type: Date
+  orderStatus: {
+    type: String,
+    enum: ['CHO_XAC_NHAN', 'CHO_GIAO_HANG', 'DANG_VAN_CHUYEN', 'DA_GIAO_HANG', 'HOAN_THANH', 'DA_HUY'],
+    default: 'CHO_XAC_NHAN'
   }
 }, {
   timestamps: true
 });
 
-// Auto-generate order code
+// Tạo code tự động
 orderSchema.pre('save', async function(next) {
   try {
-    if (this.isNew && !this.orderCode) {
+    if (this.isNew && !this.code) {
       const count = await mongoose.models.Order.countDocuments();
       const date = new Date();
-      const day = date.getDate().toString().padStart(2, '0');
-      const month = (date.getMonth() + 1).toString().padStart(2, '0');
       const year = date.getFullYear().toString().slice(-2);
-      this.orderCode = `ORD-${day}${month}${year}-${(count + 1).toString().padStart(4, '0')}`;
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      this.code = `DH${year}${month}${(count + 1).toString().padStart(4, '0')}`;
     }
     next();
   } catch (error) {
@@ -90,4 +101,4 @@ orderSchema.pre('save', async function(next) {
 
 const Order = mongoose.model('Order', orderSchema);
 
-export default Order; 
+export default Order;
