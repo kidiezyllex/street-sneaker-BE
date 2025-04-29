@@ -9,36 +9,18 @@ import { Router } from 'express';
 // Import routes
 import authRoutes from "./routes/auth.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
-import statRoutes from './routes/stat.routes.js';
-import productRoutes from "./routes/product.routes.js";
-import cartRoutes from "./routes/cart.routes.js";
-import promotionRoutes from "./routes/promotion.routes.js";
-import voucherRoutes from "./routes/voucher.routes.js";
-import billRoutes from "./routes/bill.routes.js";
-import accountRoutes from './routes/account.routes.js';
-import posRoutes from './routes/pos.routes.js';
-import orderRoutes from './routes/order.routes.js';
-import returnRoutes from './routes/return.routes.js';
+import accountRoutes from "./routes/account.routes.js";
+import notificationRoutes from './routes/notification.routes.js';
 
 const router = Router();
 export async function registerRoutes(app: Express): Promise<Server> {
   try {
     // Connect to database
     await connectDB();
-    
     // API routes
     app.use("/api/auth", authRoutes);
     app.use("/api/upload", uploadRoutes);
-    app.use("/api/stats", statRoutes);
-    app.use("/api/products", productRoutes);
-    app.use("/api/cart", cartRoutes);
-    app.use("/api/promotions", promotionRoutes);
-    app.use("/api/vouchers", voucherRoutes);
-    app.use("/api/bills", billRoutes);
-    app.use("/api/accounts", accountRoutes);
-    app.use("/api/pos", posRoutes);
-    app.use("/api/orders", orderRoutes);
-    app.use("/api/returns", returnRoutes);
+    app.use("/api/notifications", notificationRoutes);
     setupSwagger(app);
     app.get("/api/health", (req: Request, res: Response) => {
       res.status(200).json({ 
