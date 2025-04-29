@@ -18,7 +18,12 @@ app.use(express.json());
 // Cấu hình CORS cho phép nhiều origin
 const allowedOrigins = [
   'http://localhost:3000',
-  'https://street-sneaker.vercel.app'
+  'http://localhost:3001',
+  'http://localhost:5173',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:5173',
+  'https://street-sneaker.vercel.app',
+  'https://street-sneaker-fe.vercel.app'
 ];
 
 app.use(cors({
@@ -33,8 +38,10 @@ app.use(cors({
     return callback(null, true);
   },
   credentials: true, // Cho phép gửi cookies
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  maxAge: 86400 // Thời gian cache preflight request trong 24 giờ
 }));
 
 // Middleware xử lý static files
