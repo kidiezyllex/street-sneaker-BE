@@ -36,9 +36,7 @@ import {
   getBestSellingProducts,
   getLowStockProducts,
   filterProducts,
-  quickEdit,
-  addVariant,
-  addImages
+  addVariant
 } from '../controllers/product.controller.js';
 import { protect, admin } from '../middlewares/auth.middleware.js';
 
@@ -333,7 +331,7 @@ router.post('/', protect, admin, createProduct);
  * @swagger
  * /products/{id}:
  *   put:
- *     summary: Cập nhật thông tin sản phẩm
+ *     summary: Cập nhật thông tin sản phẩm (Tên và Trạng thái)
  *     tags: [Products]
  *     security:
  *       - bearerAuth: []
@@ -353,14 +351,11 @@ router.post('/', protect, admin, createProduct);
  *             properties:
  *               name:
  *                 type: string
- *               description:
+ *                 description: Tên sản phẩm
+ *               status:
  *                 type: string
- *               price:
- *                 type: number
- *               category:
- *                 type: string
- *               brand:
- *                 type: string
+ *                 enum: [HOAT_DONG, KHONG_HOAT_DONG]
+ *                 description: Trạng thái sản phẩm
  *     responses:
  *       200:
  *         description: Cập nhật thành công
@@ -377,7 +372,7 @@ router.put('/:id', protect, admin, updateProduct);
  * @swagger
  * /products/{id}:
  *   delete:
- *     summary: Xóa sản phẩm
+ *     summary: Ẩn sản phẩm (cập nhật trạng thái)
  *     tags: [Products]
  *     security:
  *       - bearerAuth: []
@@ -390,7 +385,7 @@ router.put('/:id', protect, admin, updateProduct);
  *         description: ID sản phẩm
  *     responses:
  *       200:
- *         description: Xóa thành công
+ *         description: Ẩn sản phẩm thành công
  *       401:
  *         description: Không được phép
  *       404:
@@ -495,7 +490,7 @@ router.put('/:id/variants/:variantId', protect, admin, updateProductVariant);
  * @swagger
  * /products/{id}/variants/{variantId}:
  *   delete:
- *     summary: Xóa biến thể sản phẩm
+ *     summary: Ẩn biến thể sản phẩm (cập nhật trạng thái)
  *     tags: [Products]
  *     security:
  *       - bearerAuth: []
@@ -514,7 +509,7 @@ router.put('/:id/variants/:variantId', protect, admin, updateProductVariant);
  *         description: ID biến thể
  *     responses:
  *       200:
- *         description: Xóa thành công
+ *         description: Ẩn biến thể thành công
  *       401:
  *         description: Không được phép
  *       404:
@@ -524,9 +519,9 @@ router.delete('/:id/variants/:variantId', protect, admin, deleteProductVariant);
 
 /**
  * @swagger
- * /products/{id}/images:
+ * /products/{id}/variants/{variantId}/images:
  *   post:
- *     summary: Thêm ảnh sản phẩm
+ *     summary: Thêm ảnh cho biến thể sản phẩm
  *     tags: [Products]
  *     security:
  *       - bearerAuth: []
@@ -537,17 +532,34 @@ router.delete('/:id/variants/:variantId', protect, admin, deleteProductVariant);
  *           type: string
  *         required: true
  *         description: ID sản phẩm
+ *       - in: path
+ *         name: variantId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID biến thể
  *     requestBody:
  *       required: true
  *       content:
- *         multipart/form-data:
+ *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - url
  *             properties:
- *               image:
+ *               url:
  *                 type: string
- *                 format: binary
- *                 description: File ảnh
+ *                 format: url
+ *                 description: Đường dẫn URL của hình ảnh
+ *               defaultImage:
+ *                 type: boolean
+ *                 default: false
+ *                 description: Là ảnh đại diện cho biến thể?
+ *               status:
+ *                 type: string
+ *                 enum: [HOAT_DONG, KHONG_HOAT_DONG]
+ *                 default: HOAT_DONG
+ *                 description: Trạng thái của hình ảnh
  *     responses:
  *       201:
  *         description: Thêm ảnh thành công
@@ -555,16 +567,16 @@ router.delete('/:id/variants/:variantId', protect, admin, deleteProductVariant);
  *         description: Dữ liệu không hợp lệ
  *       401:
  *         description: Không được phép
- *       404:
- *         description: Không tìm thấy sản phẩm
+ *       404: 
+ *         description: Không tìm thấy sản phẩm hoặc biến thể
  */
-router.post('/:id/images', protect, admin, addProductImage);
+router.post('/:id/variants/:variantId/images', protect, admin, addProductImage);
 
 /**
  * @swagger
- * /products/{id}/images/{imageId}:
+ * /products/{id}/variants/{variantId}/images/{imageId}:
  *   put:
- *     summary: Cập nhật ảnh sản phẩm
+ *     summary: Cập nhật ảnh biến thể sản phẩm
  *     tags: [Products]
  *     security:
  *       - bearerAuth: []
@@ -575,6 +587,12 @@ router.post('/:id/images', protect, admin, addProductImage);
  *           type: string
  *         required: true
  *         description: ID sản phẩm
+ *       - in: path
+ *         name: variantId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID biến thể
  *       - in: path
  *         name: imageId
  *         schema:
@@ -584,14 +602,21 @@ router.post('/:id/images', protect, admin, addProductImage);
  *     requestBody:
  *       required: true
  *       content:
- *         multipart/form-data:
+ *         application/json:
  *           schema:
  *             type: object
  *             properties:
- *               image:
+ *               url:
  *                 type: string
- *                 format: binary
- *                 description: File ảnh mới
+ *                 format: url
+ *                 description: Đường dẫn URL mới của hình ảnh
+ *               defaultImage:
+ *                 type: boolean
+ *                 description: Cập nhật trạng thái ảnh mặc định
+ *               status:
+ *                 type: string
+ *                 enum: [HOAT_DONG, KHONG_HOAT_DONG]
+ *                 description: Cập nhật trạng thái hình ảnh
  *     responses:
  *       200:
  *         description: Cập nhật thành công
@@ -600,15 +625,15 @@ router.post('/:id/images', protect, admin, addProductImage);
  *       401:
  *         description: Không được phép
  *       404:
- *         description: Không tìm thấy sản phẩm hoặc ảnh
+ *         description: Không tìm thấy sản phẩm, biến thể hoặc ảnh
  */
-router.put('/:id/images/:imageId', protect, admin, updateProductImage);
+router.put('/:id/variants/:variantId/images/:imageId', protect, admin, updateProductImage);
 
 /**
  * @swagger
- * /products/{id}/images/{imageId}:
+ * /products/{id}/variants/{variantId}/images/{imageId}:
  *   delete:
- *     summary: Xóa ảnh sản phẩm
+ *     summary: Ẩn ảnh biến thể sản phẩm (cập nhật trạng thái)
  *     tags: [Products]
  *     security:
  *       - bearerAuth: []
@@ -620,6 +645,12 @@ router.put('/:id/images/:imageId', protect, admin, updateProductImage);
  *         required: true
  *         description: ID sản phẩm
  *       - in: path
+ *         name: variantId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID biến thể
+ *       - in: path
  *         name: imageId
  *         schema:
  *           type: string
@@ -627,13 +658,13 @@ router.put('/:id/images/:imageId', protect, admin, updateProductImage);
  *         description: ID ảnh
  *     responses:
  *       200:
- *         description: Xóa thành công
+ *         description: Ẩn ảnh thành công
  *       401:
  *         description: Không được phép
  *       404:
- *         description: Không tìm thấy sản phẩm hoặc ảnh
+ *         description: Không tìm thấy sản phẩm, biến thể hoặc ảnh
  */
-router.delete('/:id/images/:imageId', protect, admin, deleteProductImage);
+router.delete('/:id/variants/:variantId/images/:imageId', protect, admin, deleteProductImage);
 
 /**
  * @swagger
@@ -1463,14 +1494,8 @@ router.get('/low-stock', protect, getLowStockProducts);
 // Route thêm biến thể nhanh
 router.post('/:id/add-variant', protect, admin, addVariant);
 
-// Route thêm hình ảnh nhanh
-router.post('/:id/add-images', protect, admin, addImages);
-
 // Routes tìm kiếm và lọc sản phẩm
 router.get('/search/products', searchProducts);
 router.get('/filter/products', filterProducts);
-
-// Route chỉnh sửa nhanh sản phẩm
-router.put('/:id/quick-edit', protect, admin, quickEdit);
 
 export default router; 

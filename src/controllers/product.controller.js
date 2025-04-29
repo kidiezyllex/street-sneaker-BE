@@ -121,18 +121,26 @@ export const createProduct = async (req, res) => {
  */
 export const updateProduct = async (req, res) => {
   try {
-    const validatedData = validateProduct(req.body);
-    const product = await Product.findByIdAndUpdate(
-      req.params.id,
-      validatedData,
-      { new: true }
-    );
+    const product = await Product.findById(req.params.id);
+
     if (!product) {
-      return res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
+      return res.status(404).json({ success: false, message: 'Không tìm thấy sản phẩm' });
     }
-    res.json(product);
+
+    const updates = req.body;
+    const allowedUpdates = ['name', 'status']; // Chỉ cho phép cập nhật name và status ở cấp sản phẩm
+
+    Object.keys(updates).forEach(update => {
+      if (allowedUpdates.includes(update)) {
+        product[update] = updates[update];
+      }
+    });
+
+    await product.save();
+
+    return res.status(200).json({ success: true, message: 'Cập nhật sản phẩm thành công', data: product });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    return res.status(400).json({ success: false, message: 'Đã xảy ra lỗi khi cập nhật sản phẩm', error: error.message });
   }
 };
 
@@ -1406,79 +1414,45 @@ export const addMaterial = async (req, res) => {
 
 export const addVariant = async (req, res) => {
   try {
-    const validatedData = validateVariant(req.body);
+    // const validatedData = validateVariant(req.body); // Bỏ validate nếu chưa định nghĩa
     const product = await Product.findById(req.params.id);
     if (!product) {
-      return res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
+      return res.status(404).json({ success: false, message: 'Không tìm thấy sản phẩm' });
     }
-    const variant = new Variant({
-      ...validatedData,
-      productId: product._id
-    });
-    await variant.save();
-    res.status(201).json(variant);
+
+    // Tạo biến thể mới từ dữ liệu request body
+    const newVariant = {
+      // ... các trường của biến thể từ req.body dựa trên product.model.js
+      price: req.body.price,
+      weight: req.body.weight,
+      amount: req.body.amount || 0,
+      description: req.body.description,
+      status: req.body.status || 'HOAT_DONG',
+      brand: req.body.brand, // Cần đảm bảo req.body.brand có cấu trúc phù hợp hoặc là ID
+      sole: req.body.sole,     // Tương tự cho sole, material, category, size, color
+      material: req.body.material,
+      category: req.body.category,
+      size: req.body.size,
+      color: req.body.color,
+      images: req.body.images || [], // Nhận mảng images nếu có
+      promotions: req.body.promotions || [] // Nhận mảng promotions nếu có
+    };
+
+    product.variants.push(newVariant);
+    await product.save(); // Mongoose sẽ tự động tạo _id cho newVariant khi save
+
+    // Tìm lại biến thể vừa thêm để trả về, vì _id được tạo lúc save
+    const addedVariant = product.variants[product.variants.length - 1];
+
+    res.status(201).json({ success: true, message: 'Thêm biến thể thành công', data: addedVariant });
   } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-};
-
-export const addImages = async (req, res) => {
-  try {
-    const { files } = req;
-    const { color } = req.body;
-    if (!files || files.length === 0) {
-      return res.status(400).json({ message: 'Vui lòng tải lên ít nhất một hình ảnh' });
-    }
-
-    const product = await Product.findById(req.params.id);
-    if (!product) {
-      return res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
-    }
-
-    const uploadPromises = files.map(file => uploadToCloudinary(file.path));
-    const uploadedImages = await Promise.all(uploadPromises);
-
-    const images = uploadedImages.map(image => ({
-      url: image.url,
-      color,
-      productId: product._id
-    }));
-
-    const savedImages = await Image.insertMany(images);
-    res.status(201).json(savedImages);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-};
-
-export const quickEdit = async (req, res) => {
-  try {
-    const updates = req.body;
-    const product = await Product.findById(req.params.id);
-    if (!product) {
-      return res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
-    }
-
-    // Chỉ cho phép cập nhật một số trường nhất định
-    const allowedUpdates = ['name', 'description', 'price', 'stock'];
-    const updateData = {};
-    Object.keys(updates).forEach(key => {
-      if (allowedUpdates.includes(key)) {
-        updateData[key] = updates[key];
-      }
-    });
-
-    Object.assign(product, updateData);
-    await product.save();
-    res.json(product);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ success: false, message: 'Đã xảy ra lỗi khi thêm biến thể', error: error.message });
   }
 };
 
 export const filterProducts = async (req, res) => {
   try {
-    const { 
+    const {
       categories,
       materials,
       colors,
