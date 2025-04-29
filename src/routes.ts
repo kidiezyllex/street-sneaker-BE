@@ -9,18 +9,25 @@ import { Router } from 'express';
 // Import routes
 import authRoutes from "./routes/auth.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
-import accountRoutes from "./routes/account.routes.js";
+import accountRoutes from './routes/account.routes.js';
+import orderRoutes from './routes/order.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
+import paymentRoutes from './routes/payment.routes.js';
 
 const router = Router();
 export async function registerRoutes(app: Express): Promise<Server> {
   try {
     // Connect to database
     await connectDB();
+    
     // API routes
     app.use("/api/auth", authRoutes);
     app.use("/api/upload", uploadRoutes);
+    app.use("/api/accounts", accountRoutes);
+    app.use("/api/orders", orderRoutes);
     app.use("/api/notifications", notificationRoutes);
+    app.use("/api/payments", paymentRoutes);
+    
     setupSwagger(app);
     app.get("/api/health", (req: Request, res: Response) => {
       res.status(200).json({ 
