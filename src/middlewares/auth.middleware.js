@@ -32,7 +32,7 @@ export const authenticate = async (req, res, next) => {
     const decoded = jwt.verify(token, config.jwtSecret);
     
     // Tìm người dùng từ token
-    const account = await Account.findById(decoded.accountId).select('-password');
+    const account = await Account.findById(decoded.id).select('-password');
     
     if (!account) {
       return res.status(401).json({
@@ -110,7 +110,7 @@ export const protect = async (req, res, next) => {
     const decoded = jwt.verify(token, config.jwtSecret);
     
     // Tìm người dùng từ token với thông tin đầy đủ
-    const currentAccount = await Account.findById(decoded.accountId).select('-password');
+    const currentAccount = await Account.findById(decoded.id).select('-password');
     
     if (!currentAccount) {
       return res.status(401).json({

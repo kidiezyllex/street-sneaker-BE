@@ -567,7 +567,6 @@ export const deleteProductPromotion = async (req, res) => {
       });
     }
 
-    // Tìm biến thể
     const variantIndex = product.variants.findIndex(v => v._id.toString() === req.params.variantId);
     if (variantIndex === -1) {
       return res.status(404).json({
@@ -576,7 +575,6 @@ export const deleteProductPromotion = async (req, res) => {
       });
     }
 
-    // Tìm và xóa khuyến mãi
     const promotionIndex = product.variants[variantIndex].promotions.findIndex(
       promo => promo.promotionId.toString() === req.params.promotionId
     );
@@ -604,8 +602,6 @@ export const deleteProductPromotion = async (req, res) => {
   }
 };
 
-
-// Lấy danh sách tất cả thương hiệu
 export const getAllBrands = async (req, res) => {
   try {
     const brands = await Brand.find().sort({ name: 1 });
