@@ -16,6 +16,9 @@ import promotionRoutes from "./routes/promotion.routes.js";
 import voucherRoutes from "./routes/voucher.routes.js";
 import billRoutes from "./routes/bill.routes.js";
 import accountRoutes from './routes/account.routes.js';
+import posRoutes from './routes/pos.routes.js';
+import orderRoutes from './routes/order.routes.js';
+import returnRoutes from './routes/return.routes.js';
 
 const router = Router();
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -33,11 +36,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     app.use("/api/vouchers", voucherRoutes);
     app.use("/api/bills", billRoutes);
     app.use("/api/accounts", accountRoutes);
-    
-    // Set up Swagger documentation
+    app.use("/api/pos", posRoutes);
+    app.use("/api/orders", orderRoutes);
+    app.use("/api/returns", returnRoutes);
     setupSwagger(app);
-    
-    // API health check endpoint
     app.get("/api/health", (req: Request, res: Response) => {
       res.status(200).json({ 
         status: "ok", 
@@ -45,7 +47,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     });
     
-    // Error handling
     app.use(notFound);
     app.use(errorHandler);
     

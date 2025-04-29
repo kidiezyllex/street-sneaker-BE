@@ -3,13 +3,13 @@ import Product from '../models/product.model.js';
 import Payment from '../models/payment.model.js';
 import Voucher from '../models/voucher.model.js';
 import { validateOrder, validateOrderItem, validatePayment } from '../utils/validation.js';
-import { generateQRCode, scanQRCode } from '../utils/qr.js';
+import { scanQRCode } from '../utils/qr.js';
 import { generateReceipt } from '../utils/receipt.js';
 
 // Tối đa 5 đơn hàng cùng lúc
 const MAX_CONCURRENT_ORDERS = 5;
 
-exports.createOrder = async (req, res) => {
+export const createOrder = async (req, res) => {
   try {
     // Kiểm tra số lượng đơn hàng hiện tại
     const activeOrders = await Order.countDocuments({
@@ -35,7 +35,7 @@ exports.createOrder = async (req, res) => {
   }
 };
 
-exports.getOrders = async (req, res) => {
+export const getOrders = async (req, res) => {
   try {
     const { page = 1, limit = 10, status } = req.query;
     const query = {
@@ -63,7 +63,7 @@ exports.getOrders = async (req, res) => {
   }
 };
 
-exports.getOrderById = async (req, res) => {
+export const getOrderById = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
       .populate('items.product')
@@ -150,6 +150,78 @@ export const updateOrderItem = async (req, res) => {
   }
 };
 
+/**
+ * Cập nhật thông tin đơn hàng
+ */
+export const updateOrder = async (req, res) => {
+  try {
+    const { customer, status, note } = req.body;
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
+    }
+
+    if (customer) order.customer = customer;
+    if (status) order.status = status;
+    if (note) order.note = note;
+
+    await order.save();
+    res.json(order);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+/**
+ * Xóa đơn hàng
+ */
+export const deleteOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
+    }
+
+    // Không xóa hoàn toàn, chỉ đổi trạng thái
+    order.status = 'CANCELLED';
+    await order.save();
+
+    res.json({ message: 'Đơn hàng đã được hủy thành công' });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+/**
+ * Xóa sản phẩm khỏi đơn hàng
+ */
+export const removeOrderItem = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    
+    if (!order) {
+      return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
+    }
+
+    const item = order.items.id(req.params.itemId);
+    if (!item) {
+      return res.status(404).json({ message: 'Không tìm thấy sản phẩm trong đơn hàng' });
+    }
+
+    item.remove();
+    
+    // Tự động áp dụng khuyến mãi tốt nhất sau khi xóa sản phẩm
+    await applyBestPromotion(order);
+    
+    await order.save();
+    res.json(order);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 export const processPayment = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
@@ -217,7 +289,7 @@ export const completeOrder = async (req, res) => {
   }
 };
 
-export const scanQRCode = async (req, res) => {
+export const scanProductQRCode = async (req, res) => {
   try {
     const { qrCode } = req.body;
     const productData = await scanQRCode(qrCode);
@@ -248,50 +320,50 @@ export const printReceipt = async (req, res) => {
   }
 };
 
-// Hàm hỗ trợ tìm và áp dụng khuyến mãi tốt nhất
 export const applyBestPromotion = async (order) => {
   try {
-    // Tìm tất cả khuyến mãi có hiệu lực
-    const validPromotions = await Voucher.find({
-      status: 'ACTIVE',
+    if (!order || !order.items || order.items.length === 0) {
+      return;
+    }
+
+    // Tính tổng giá trị đơn hàng trước khuyến mãi
+    let subtotal = 0;
+    for (const item of order.items) {
+      subtotal += item.price * item.quantity;
+    }
+    
+    // Tìm voucher có thể áp dụng tốt nhất
+    const applicableVouchers = await Voucher.find({
+      minOrderValue: { $lte: subtotal },
       startDate: { $lte: new Date() },
       endDate: { $gte: new Date() },
-      minimumAmount: { $lte: order.subtotal }
-    });
+      status: 'HOAT_DONG'
+    }).sort({ value: -1 });
 
-    let maxDiscount = 0;
-    let bestPromotion = null;
-
-    // Tính toán khuyến mãi tốt nhất
-    for (const promotion of validPromotions) {
-      let discount = 0;
-      if (promotion.type === 'PERCENTAGE') {
-        discount = (order.subtotal * promotion.value) / 100;
-        if (promotion.maximumValue) {
-          discount = Math.min(discount, promotion.maximumValue);
+    let bestDiscount = 0;
+    
+    if (applicableVouchers.length > 0) {
+      const bestVoucher = applicableVouchers[0];
+      
+      if (bestVoucher.type === 'PHAN_TRAM') {
+        bestDiscount = subtotal * (bestVoucher.value / 100);
+        // Giới hạn giảm giá tối đa nếu có
+        if (bestVoucher.maxDiscount && bestDiscount > bestVoucher.maxDiscount) {
+          bestDiscount = bestVoucher.maxDiscount;
         }
       } else {
-        discount = promotion.value;
-      }
-
-      if (discount > maxDiscount) {
-        maxDiscount = discount;
-        bestPromotion = promotion;
+        bestDiscount = bestVoucher.value;
       }
     }
-
-    // Áp dụng khuyến mãi tốt nhất
-    if (bestPromotion) {
-      order.promotion = bestPromotion._id;
-      order.discount = maxDiscount;
-    } else {
-      order.promotion = null;
-      order.discount = 0;
-    }
-
-    // Cập nhật tổng tiền
-    order.totalAmount = order.subtotal - order.discount;
+    
+    // Cập nhật thông tin đơn hàng
+    order.subtotal = subtotal;
+    order.discount = bestDiscount;
+    order.totalAmount = subtotal - bestDiscount;
+    
+    return order;
   } catch (error) {
-    console.error('Lỗi khi áp dụng khuyến mãi:', error);
+    console.error('Error applying promotion:', error);
+    throw error;
   }
-} 
+}; 

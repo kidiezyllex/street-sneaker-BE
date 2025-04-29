@@ -6,15 +6,11 @@ import {
   updatePromotion,
   deletePromotion,
   getActivePromotions,
-  createVoucher,
-  getVoucherById,
-  updateVoucher,
   createProductPromotion,
   getProductPromotions,
-  updateProductPromotion,
-  searchVouchers,
   searchProductPromotions,
-  deleteProductPromotion
+  deleteProductPromotion,
+  updateProductPromotion
 } from '../controllers/promotion.controller.js';
 import { protect, admin } from '../middlewares/auth.middleware.js';
 
@@ -282,21 +278,13 @@ router.delete('/:id', protect, admin, deletePromotion);
  *                   items:
  *                     $ref: '#/components/schemas/Promotion'
  */
-router.get('/active', getActivePromotions);
+router.get('/active', protect, getActivePromotions);
 
-// Quản lý mã giảm giá
-router.post('/vouchers', protect, admin, createVoucher);
-router.get('/vouchers/:id', protect, getVoucherById);
-router.put('/vouchers/:id', protect, admin, updateVoucher);
-
-// Quản lý khuyến mãi sản phẩm
-router.post('/product-promotions', protect, admin, createProductPromotion);
-router.get('/product-promotions', protect, getProductPromotions);
-router.put('/product-promotions/:id', protect, admin, updateProductPromotion);
-router.delete('/product-promotions/:id', protect, admin, deleteProductPromotion);
-
-// Lọc và tìm kiếm
-router.get('/vouchers/search', searchVouchers);
-router.get('/product-promotions/search', searchProductPromotions);
+// Routes cho khuyến mãi sản phẩm
+router.post('/products', protect, admin, createProductPromotion);
+router.get('/products', protect, admin, getProductPromotions);
+router.get('/products/search', protect, admin, searchProductPromotions);
+router.delete('/products/:id', protect, admin, deleteProductPromotion);
+router.put('/products/:id', protect, admin, updateProductPromotion);
 
 export default router; 

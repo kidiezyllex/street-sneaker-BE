@@ -7,7 +7,7 @@ import {
   deleteVoucher,
   addCustomerToVoucher,
   removeCustomerFromVoucher,
-  checkVoucher,
+  checkVoucher
 } from '../controllers/voucher.controller.js';
 import { protect, admin } from '../middlewares/auth.middleware.js';
 
@@ -75,7 +75,7 @@ const router = express.Router();
  *       401:
  *         description: Không được phép
  */
-router.get('/', protect, getAllVouchers);
+router.get('/', protect, admin, getAllVouchers);
 
 /**
  * @swagger
@@ -113,7 +113,7 @@ router.get('/', protect, getAllVouchers);
  *       404:
  *         description: Không tìm thấy voucher
  */
-router.get('/:id', protect, getVoucherById);
+router.get('/:id', protect, admin, getVoucherById);
 
 /**
  * @swagger
@@ -309,8 +309,8 @@ router.delete('/:id', protect, admin, deleteVoucher);
  */
 router.post('/check', protect, checkVoucher);
 
-// Routes quản lý khách hàng và voucher
-router.post('/:id/customers', protect, addCustomerToVoucher);
-router.delete('/:id/customers/:customerId', protect, removeCustomerFromVoucher);
+// Routes cho quản lý khách hàng của voucher
+router.post('/:id/customers', protect, admin, addCustomerToVoucher);
+router.delete('/:id/customers/:customerId', protect, admin, removeCustomerFromVoucher);
 
 export default router; 

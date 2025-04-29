@@ -22,6 +22,100 @@ export const validateOrderItems = (items) => {
 };
 
 /**
+ * Validates an order data.
+ * @param {object} orderData - The order data to validate.
+ * @returns {object} - The validated order data.
+ * @throws {Error} - If validation fails.
+ */
+export const validateOrder = (orderData) => {
+  if (!orderData) {
+    throw new Error('Dữ liệu đơn hàng không được để trống');
+  }
+
+  // Validate items (optional on create, can be added later)
+  if (orderData.items) {
+    const itemsError = validateOrderItems(orderData.items);
+    if (itemsError) {
+      throw new Error(itemsError);
+    }
+  }
+
+  // Return validated data
+  return {
+    items: orderData.items || [],
+    customer: orderData.customer,
+    status: orderData.status || 'PENDING',
+    note: orderData.note,
+    subtotal: orderData.subtotal || 0,
+    discount: orderData.discount || 0,
+    tax: orderData.tax || 0,
+    totalAmount: orderData.totalAmount || 0,
+    paidAmount: orderData.paidAmount || 0
+  };
+};
+
+/**
+ * Validates an order item data.
+ * @param {object} itemData - The order item data to validate.
+ * @returns {object} - The validated order item data.
+ * @throws {Error} - If validation fails.
+ */
+export const validateOrderItem = (itemData) => {
+  if (!itemData) {
+    throw new Error('Dữ liệu sản phẩm không được để trống');
+  }
+
+  if (!itemData.productId) {
+    throw new Error('ID sản phẩm không được để trống');
+  }
+
+  if (!itemData.variantId) {
+    throw new Error('ID biến thể sản phẩm không được để trống');
+  }
+
+  if (!itemData.quantity || isNaN(itemData.quantity) || itemData.quantity <= 0) {
+    throw new Error('Số lượng sản phẩm phải lớn hơn 0');
+  }
+
+  return {
+    productId: itemData.productId,
+    variantId: itemData.variantId,
+    quantity: parseInt(itemData.quantity)
+  };
+};
+
+/**
+ * Validates payment data.
+ * @param {object} paymentData - The payment data to validate.
+ * @returns {object} - The validated payment data.
+ * @throws {Error} - If validation fails.
+ */
+export const validatePayment = (paymentData) => {
+  if (!paymentData) {
+    throw new Error('Dữ liệu thanh toán không được để trống');
+  }
+
+  if (!paymentData.amount || isNaN(paymentData.amount) || paymentData.amount <= 0) {
+    throw new Error('Số tiền thanh toán phải lớn hơn 0');
+  }
+
+  if (!paymentData.method) {
+    throw new Error('Phương thức thanh toán không được để trống');
+  }
+
+  const validMethods = ['CASH', 'CARD', 'BANKING', 'MOMO', 'ZALOPAY', 'OTHER'];
+  if (!validMethods.includes(paymentData.method)) {
+    throw new Error('Phương thức thanh toán không hợp lệ');
+  }
+
+  return {
+    amount: parseFloat(paymentData.amount),
+    method: paymentData.method,
+    note: paymentData.note
+  };
+};
+
+/**
  * Validates account data.
  * @param {object} accountData - The account data to validate.
  * @returns {object} - The validated account data.

@@ -214,7 +214,7 @@ router.post('/register', register);
  *                       format: date-time
  *                     gender:
  *                       type: boolean
- *                       description: Giới tính (true: Nam, false: Nữ)
+ *                       description: "Giới tính (true: Nam, false: Nữ)"
  *                     avatar:
  *                       type: string
  *                     role:
@@ -243,7 +243,7 @@ router.post('/register', register);
  *                             type: string
  *                           type:
  *                             type: boolean
- *                             description: Loại địa chỉ (true: Công ty, false: Nhà riêng)
+ *                             description: "Loại địa chỉ (true: Công ty, false: Nhà riêng)"
  *                           isDefault:
  *                             type: boolean
  *                             description: Địa chỉ mặc định
@@ -338,7 +338,7 @@ router.put('/change-password', protect, changePassword);
  *                 format: date
  *               gender:
  *                 type: boolean
- *                 description: Giới tính (true: Nam, false: Nữ)
+ *                 description: "Giới tính (true: Nam, false: Nữ)"
  *               avatar:
  *                 type: string
  *     responses:
@@ -409,7 +409,7 @@ router.put('/update-profile', protect, updateProfile);
  *                 description: Địa chỉ cụ thể (số nhà, tên đường)
  *               type:
  *                 type: boolean
- *                 description: Loại địa chỉ (true: Công ty, false: Nhà riêng - Mặc định false)
+ *                 description: "Loại địa chỉ (true: Công ty, false: Nhà riêng - Mặc định false)"
  *                 default: false
  *               isDefault:
  *                 type: boolean
@@ -614,7 +614,7 @@ router.put('/address/:addressId/default', protect, setDefaultAddress);
  *           format: date-time
  *         gender:
  *           type: boolean
- *           description: Giới tính (true: Nam, false: Nữ)
+ *           description: "Giới tính (true: Nam, false: Nữ)"
  *         avatar:
  *           type: string
  *         role:
@@ -652,7 +652,7 @@ router.put('/address/:addressId/default', protect, setDefaultAddress);
  *           type: string
  *         type:
  *           type: boolean
- *           description: Loại địa chỉ (true: Công ty, false: Nhà riêng)
+ *           description: "Loại địa chỉ (true: Công ty, false: Nhà riêng)"
  *         isDefault:
  *           type: boolean
  *           description: Địa chỉ mặc định

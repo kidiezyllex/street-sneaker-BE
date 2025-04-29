@@ -10,7 +10,7 @@ import {
   removeOrderItem,
   processPayment,
   completeOrder,
-  scanQRCode,
+  scanProductQRCode,
   printReceipt
 } from '../controllers/pos.controller.js';
 import { protect, admin } from '../middlewares/auth.middleware.js';
@@ -183,7 +183,7 @@ router.delete('/orders/:id', protect, admin, deleteOrder);
 
 /**
  * @swagger
- * /pos/orders/{id}/items:
+ * /pos/orders/items:
  *   post:
  *     summary: Thêm sản phẩm vào đơn hàng POS
  *     tags: [POS Order Items]
@@ -220,11 +220,11 @@ router.delete('/orders/:id', protect, admin, deleteOrder);
  *       401:
  *         description: Không được phép
  */
-router.post('/orders/:id/items', protect, admin, addOrderItem);
+router.post('/orders/items', protect, admin, addOrderItem);
 
 /**
  * @swagger
- * /pos/orders/{id}/items/{itemId}:
+ * /pos/orders/items/{itemId}:
  *   put:
  *     summary: Cập nhật sản phẩm trong đơn hàng POS
  *     tags: [POS Order Items]
@@ -265,7 +265,7 @@ router.post('/orders/:id/items', protect, admin, addOrderItem);
  *       401:
  *         description: Không được phép
  */
-router.put('/orders/:id/items/:itemId', protect, admin, updateOrderItem);
+router.put('/orders/items/:itemId', protect, admin, updateOrderItem);
 
 /**
  * @swagger
@@ -300,7 +300,7 @@ router.delete('/orders/:id/items/:itemId', protect, admin, removeOrderItem);
 
 /**
  * @swagger
- * /pos/orders/{id}/payments:
+ * /pos/orders/payment:
  *   post:
  *     summary: Xử lý thanh toán cho đơn hàng POS
  *     tags: [POS Payments]
@@ -338,11 +338,11 @@ router.delete('/orders/:id/items/:itemId', protect, admin, removeOrderItem);
  *       401:
  *         description: Không được phép
  */
-router.post('/orders/:id/payments', protect, admin, processPayment);
+router.post('/orders/payment', protect, admin, processPayment);
 
 /**
  * @swagger
- * /pos/orders/{id}/complete:
+ * /pos/orders/complete:
  *   post:
  *     summary: Hoàn thành đơn hàng POS
  *     tags: [POS Orders]
@@ -365,11 +365,11 @@ router.post('/orders/:id/payments', protect, admin, processPayment);
  *       401:
  *         description: Không được phép
  */
-router.post('/orders/:id/complete', protect, admin, completeOrder);
+router.post('/orders/complete', protect, admin, completeOrder);
 
 /**
  * @swagger
- * /pos/scan-qr:
+ * /pos/scan:
  *   post:
  *     summary: Quét mã QR sản phẩm
  *     tags: [POS]
@@ -393,12 +393,12 @@ router.post('/orders/:id/complete', protect, admin, completeOrder);
  *       401:
  *         description: Không được phép
  */
-router.post('/scan-qr', protect, admin, scanQRCode);
+router.post('/scan', protect, admin, scanProductQRCode);
 
 /**
  * @swagger
- * /pos/orders/{id}/print:
- *   get:
+ * /pos/print:
+ *   post:
  *     summary: In hóa đơn cho đơn hàng POS
  *     tags: [POS Orders]
  *     security:
@@ -418,6 +418,6 @@ router.post('/scan-qr', protect, admin, scanQRCode);
  *       401:
  *         description: Không được phép
  */
-router.get('/orders/:id/print', protect, admin, printReceipt);
+router.post('/print', protect, admin, printReceipt);
 
 export default router;

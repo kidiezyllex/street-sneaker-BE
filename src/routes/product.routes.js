@@ -34,7 +34,11 @@ import {
   searchProducts,
   getNewestProducts,
   getBestSellingProducts,
-  getLowStockProducts
+  getLowStockProducts,
+  filterProducts,
+  quickEdit,
+  addVariant,
+  addImages
 } from '../controllers/product.controller.js';
 import { protect, admin } from '../middlewares/auth.middleware.js';
 
@@ -1331,5 +1335,18 @@ router.get('/best-selling', getBestSellingProducts);
  *         description: Không được phép
  */
 router.get('/low-stock', protect, getLowStockProducts);
+
+// Route thêm biến thể nhanh
+router.post('/:id/add-variant', protect, admin, addVariant);
+
+// Route thêm hình ảnh nhanh
+router.post('/:id/add-images', protect, admin, addImages);
+
+// Routes tìm kiếm và lọc sản phẩm
+router.get('/search/products', searchProducts);
+router.get('/filter/products', filterProducts);
+
+// Route chỉnh sửa nhanh sản phẩm
+router.put('/:id/quick-edit', protect, admin, quickEdit);
 
 export default router; 
