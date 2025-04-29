@@ -164,44 +164,168 @@ router.get('/:id', getProductById);
  *             type: object
  *             required:
  *               - name
- *               - description
- *               - price
- *               - category
- *               - brand
+ *               - variants
  *             properties:
  *               name:
  *                 type: string
- *                 description: Tên sản phẩm
- *               description:
+ *                 description: Tên sản phẩm (duy nhất)
+ *               status:
  *                 type: string
- *                 description: Mô tả sản phẩm
- *               price:
- *                 type: number
- *                 description: Giá sản phẩm
- *               category:
- *                 type: string
- *                 description: ID danh mục
- *               brand:
- *                 type: string
- *                 description: ID thương hiệu
+ *                 enum: [HOAT_DONG, KHONG_HOAT_DONG]
+ *                 default: HOAT_DONG
+ *                 description: Trạng thái sản phẩm
  *               variants:
  *                 type: array
+ *                 description: Danh sách các biến thể của sản phẩm
  *                 items:
  *                   type: object
+ *                   required:
+ *                     - price
+ *                     - brand
+ *                     - sole
+ *                     - material
+ *                     - category
+ *                     - size
+ *                     - color
  *                   properties:
- *                     color:
+ *                     code:
  *                       type: string
- *                     size:
- *                       type: string
- *                     quantity:
+ *                       description: Mã biến thể (tự động tạo nếu không cung cấp)
+ *                     price:
  *                       type: number
+ *                       format: float
+ *                       description: Giá của biến thể
+ *                     weight:
+ *                       type: number
+ *                       format: float
+ *                       description: Cân nặng của biến thể (ví dụ: gram)
+ *                     amount:
+ *                       type: integer
+ *                       description: Số lượng tồn kho
+ *                       default: 0
+ *                     quantityReturn:
+ *                       type: integer
+ *                       description: Số lượng hàng trả về
+ *                       default: 0
+ *                     description:
+ *                       type: string
+ *                       description: Mô tả riêng cho biến thể
+ *                     status:
+ *                       type: string
+ *                       enum: [HOAT_DONG, KHONG_HOAT_DONG]
+ *                       default: HOAT_DONG
+ *                       description: Trạng thái của biến thể
+ *                     brand:
+ *                       type: object
+ *                       required: [name]
+ *                       properties:
+ *                         _id:
+ *                           type: string
+ *                           format: objectId
+ *                           description: ID của Brand (nếu đã có)
+ *                         name:
+ *                           type: string
+ *                           description: Tên thương hiệu
+ *                     sole:
+ *                       type: object
+ *                       required: [name]
+ *                       properties:
+ *                         _id:
+ *                           type: string
+ *                           format: objectId
+ *                           description: ID của Sole (nếu đã có)
+ *                         name:
+ *                           type: string
+ *                           description: Tên đế giày
+ *                     material:
+ *                       type: object
+ *                       required: [name]
+ *                       properties:
+ *                         _id:
+ *                           type: string
+ *                           format: objectId
+ *                           description: ID của Material (nếu đã có)
+ *                         name:
+ *                           type: string
+ *                           description: Tên chất liệu
+ *                     category:
+ *                       type: object
+ *                       required: [name]
+ *                       properties:
+ *                         _id:
+ *                           type: string
+ *                           format: objectId
+ *                           description: ID của Category (nếu đã có)
+ *                         name:
+ *                           type: string
+ *                           description: Tên danh mục
+ *                     size:
+ *                       type: object
+ *                       required: [size]
+ *                       properties:
+ *                         _id:
+ *                           type: string
+ *                           format: objectId
+ *                           description: ID của Size (nếu đã có)
+ *                         size:
+ *                           type: number
+ *                           description: Kích thước (số)
+ *                     color:
+ *                       type: object
+ *                       required: [code, name]
+ *                       properties:
+ *                         _id:
+ *                           type: string
+ *                           format: objectId
+ *                           description: ID của Color (nếu đã có)
+ *                         code:
+ *                           type: string
+ *                           description: Mã màu (vd: #FFFFFF)
+ *                         name:
+ *                           type: string
+ *                           description: Tên màu
+ *                     images:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         required: [url]
+ *                         properties:
+ *                           url:
+ *                             type: string
+ *                             format: url
+ *                             description: Đường dẫn URL của hình ảnh
+ *                           defaultImage:
+ *                             type: boolean
+ *                             default: false
+ *                             description: Là ảnh đại diện cho biến thể?
+ *                           status:
+ *                             type: string
+ *                             enum: [HOAT_DONG, KHONG_HOAT_DONG]
+ *                             default: HOAT_DONG
+ *                     promotions:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           promotionId:
+ *                             type: string
+ *                             format: objectId
+ *                             description: ID của khuyến mãi áp dụng
+ *                           pricePromotion:
+ *                             type: number
+ *                             format: float
+ *                             description: Giá sau khi áp dụng khuyến mãi
  *     responses:
  *       201:
  *         description: Tạo sản phẩm thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Product' # Tham chiếu đến schema Product đầy đủ nếu có
  *       400:
- *         description: Dữ liệu không hợp lệ
+ *         description: Dữ liệu không hợp lệ (ví dụ: thiếu trường bắt buộc, tên sản phẩm trùng)
  *       401:
- *         description: Không được phép
+ *         description: Không được phép (chưa đăng nhập hoặc không phải admin)
  */
 router.post('/', protect, admin, createProduct);
 
