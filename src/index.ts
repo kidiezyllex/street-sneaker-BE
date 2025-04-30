@@ -20,7 +20,7 @@ app.use(cors({
   origin: true, // Cho phép tất cả các origin
   credentials: true, // Cho phép gửi cookies
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'Access-Control-Allow-Credentials'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'Access-Control-Allow-Credentials', 'access-control-allow-origin'],
   exposedHeaders: ['Content-Range', 'X-Content-Range'],
   maxAge: 86400 // Thời gian cache preflight request trong 24 giờ
 }));

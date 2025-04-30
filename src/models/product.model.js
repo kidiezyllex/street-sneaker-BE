@@ -75,6 +75,7 @@ productSchema.pre('save', async function(next) {
     }
     next();
   } catch (error) {
+    console.error('Lỗi khi tạo mã sản phẩm tự động:', error);
     next(error);
   }
 });

@@ -1,5 +1,6 @@
 import Product from '../models/product.model.js';
 import mongoose from 'mongoose';
+import { Brand, Category, Material, Color, Size } from '../models/attribute.model.js';
 
 /**
  * Tạo sản phẩm mới
@@ -8,6 +9,7 @@ import mongoose from 'mongoose';
  */
 export const createProduct = async (req, res) => {
   try {
+    console.log('Nhận yêu cầu tạo sản phẩm:', req.body);
     const { 
       name, 
       brand, 
@@ -26,47 +28,86 @@ export const createProduct = async (req, res) => {
       });
     }
 
-    // Kiểm tra các tham chiếu ObjectId
-    if (!mongoose.Types.ObjectId.isValid(brand) || 
-        !mongoose.Types.ObjectId.isValid(category) || 
-        !mongoose.Types.ObjectId.isValid(material)) {
-      return res.status(400).json({
-        success: false,
-        message: 'ID thương hiệu, danh mục hoặc chất liệu không hợp lệ'
-      });
-    }
+    // Tìm hoặc tạo mới brand, category, material
+    const [brandDoc, categoryDoc, materialDoc] = await Promise.all([
+      Brand.findOneAndUpdate(
+        { name: brand },
+        { name: brand, status: 'HOAT_DONG' },
+        { upsert: true, new: true }
+      ),
+      Category.findOneAndUpdate(
+        { name: category },
+        { name: category, status: 'HOAT_DONG' },
+        { upsert: true, new: true }
+      ),
+      Material.findOneAndUpdate(
+        { name: material },
+        { name: material, status: 'HOAT_DONG' },
+        { upsert: true, new: true }
+      )
+    ]);
 
-    // Kiểm tra từng variant
+    // Xử lý variants
+    const processedVariants = [];
     for (const variant of variants) {
       if (!variant.colorId || !variant.sizeId || !variant.price || variant.price <= 0) {
         return res.status(400).json({
           success: false,
-          message: 'Mỗi biến thể cần có màu sắc, kích cỡ và giá hợp lệ'
+          message: 'Mỗi biến thể cần có màu sắc, kích cỡ và giá hợp lệ',
+          variant
         });
       }
 
-      if (!mongoose.Types.ObjectId.isValid(variant.colorId) || 
-          !mongoose.Types.ObjectId.isValid(variant.sizeId)) {
-        return res.status(400).json({
-          success: false,
-          message: 'ID màu sắc hoặc kích cỡ không hợp lệ'
-        });
-      }
+      // Tìm hoặc tạo mới color và size
+      const [color, size] = await Promise.all([
+        Color.findOneAndUpdate(
+          { code: variant.colorId },
+          { 
+            name: variant.colorId.charAt(0).toUpperCase() + variant.colorId.slice(1), 
+            code: variant.colorId,
+            status: 'HOAT_DONG'
+          },
+          { upsert: true, new: true }
+        ),
+        Size.findOneAndUpdate(
+          { value: parseInt(variant.sizeId.replace(/\D/g, '')) },
+          { 
+            value: parseInt(variant.sizeId.replace(/\D/g, '')),
+            status: 'HOAT_DONG'
+          },
+          { upsert: true, new: true }
+        )
+      ]);
+
+      processedVariants.push({
+        ...variant,
+        colorId: color._id,
+        sizeId: size._id
+      });
     }
 
     // Tạo sản phẩm mới
     const newProduct = new Product({
       name,
-      brand,
-      category,
-      material,
+      brand: brandDoc._id,
+      category: categoryDoc._id,
+      material: materialDoc._id,
       description,
       weight,
-      variants,
+      variants: processedVariants,
       status: 'HOAT_DONG'
     });
 
     await newProduct.save();
+
+    // Populate thông tin chi tiết trước khi trả về
+    await newProduct.populate([
+      { path: 'brand', select: 'name' },
+      { path: 'category', select: 'name' },
+      { path: 'material', select: 'name' },
+      { path: 'variants.colorId', select: 'name code' },
+      { path: 'variants.sizeId', select: 'value' }
+    ]);
 
     return res.status(201).json({
       success: true,
@@ -96,7 +137,9 @@ export const getProducts = async (req, res) => {
       category, 
       material, 
       minPrice, 
-      maxPrice, 
+      maxPrice,
+      color,
+      size,
       status, 
       page = 1, 
       limit = 10 
@@ -111,12 +154,22 @@ export const getProducts = async (req, res) => {
       filter.name = { $regex: name, $options: 'i' };
     }
     
+    // Lọc theo thương hiệu (hỗ trợ nhiều thương hiệu)
     if (brand) {
-      filter.brand = brand;
+      if (Array.isArray(brand)) {
+        filter.brand = { $in: brand };
+      } else {
+        filter.brand = brand;
+      }
     }
     
+    // Lọc theo danh mục (hỗ trợ nhiều danh mục)
     if (category) {
-      filter.category = category;
+      if (Array.isArray(category)) {
+        filter.category = { $in: category };
+      } else {
+        filter.category = category;
+      }
     }
     
     if (material) {
@@ -127,7 +180,19 @@ export const getProducts = async (req, res) => {
       filter.status = status;
     }
     
-    // Thêm filter cho khoảng giá
+    // Lọc theo màu sắc
+    if (color) {
+      const colorIds = Array.isArray(color) ? color : [color];
+      filter['variants.colorId'] = { $in: colorIds };
+    }
+    
+    // Lọc theo kích cỡ
+    if (size) {
+      const sizeIds = Array.isArray(size) ? size : [size];
+      filter['variants.sizeId'] = { $in: sizeIds };
+    }
+    
+    // Lọc theo khoảng giá
     if (minPrice || maxPrice) {
       filter['variants.price'] = {};
       if (minPrice) filter['variants.price'].$gte = parseFloat(minPrice);
@@ -141,7 +206,7 @@ export const getProducts = async (req, res) => {
       .populate('category', 'name')
       .populate('material', 'name')
       .populate('variants.colorId', 'name code')
-      .populate('variants.sizeId', 'name code')
+      .populate('variants.sizeId', 'value')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
@@ -496,7 +561,18 @@ export const updateProductStock = async (req, res) => {
  */
 export const searchProducts = async (req, res) => {
   try {
-    const { keyword, page = 1, limit = 10 } = req.query;
+    const { 
+      keyword, 
+      brand, 
+      category, 
+      material, 
+      color, 
+      size, 
+      minPrice, 
+      maxPrice, 
+      page = 1, 
+      limit = 10 
+    } = req.query;
     
     if (!keyword) {
       return res.status(400).json({
@@ -516,13 +592,57 @@ export const searchProducts = async (req, res) => {
       status: 'HOAT_DONG'
     };
     
+    // Áp dụng các bộ lọc nâng cao
+    
+    // Lọc theo thương hiệu
+    if (brand) {
+      if (Array.isArray(brand)) {
+        filter.brand = { $in: brand };
+      } else {
+        filter.brand = brand;
+      }
+    }
+    
+    // Lọc theo danh mục
+    if (category) {
+      if (Array.isArray(category)) {
+        filter.category = { $in: category };
+      } else {
+        filter.category = category;
+      }
+    }
+    
+    // Lọc theo chất liệu
+    if (material) {
+      filter.material = material;
+    }
+    
+    // Lọc theo màu sắc
+    if (color) {
+      const colorIds = Array.isArray(color) ? color : [color];
+      filter['variants.colorId'] = { $in: colorIds };
+    }
+    
+    // Lọc theo kích cỡ
+    if (size) {
+      const sizeIds = Array.isArray(size) ? size : [size];
+      filter['variants.sizeId'] = { $in: sizeIds };
+    }
+    
+    // Lọc theo khoảng giá
+    if (minPrice || maxPrice) {
+      filter['variants.price'] = {};
+      if (minPrice) filter['variants.price'].$gte = parseFloat(minPrice);
+      if (maxPrice) filter['variants.price'].$lte = parseFloat(maxPrice);
+    }
+    
     const total = await Product.countDocuments(filter);
     const products = await Product.find(filter)
       .populate('brand', 'name')
       .populate('category', 'name')
       .populate('material', 'name')
       .populate('variants.colorId', 'name code')
-      .populate('variants.sizeId', 'name code')
+      .populate('variants.sizeId', 'value')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
@@ -606,6 +726,59 @@ export const updateProductImages = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi cập nhật hình ảnh',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Lấy tất cả các thuộc tính lọc sản phẩm (màu sắc, kích cỡ, thương hiệu, danh mục, chất liệu)
+ * @route GET /api/products/filters
+ * @access Public
+ */
+export const getAllFilters = async (req, res) => {
+  try {
+    const [brands, categories, materials, colors, sizes] = await Promise.all([
+      Brand.find({ status: 'HOAT_DONG' }).select('_id name'),
+      Category.find({ status: 'HOAT_DONG' }).select('_id name'),
+      Material.find({ status: 'HOAT_DONG' }).select('_id name'),
+      Color.find({ status: 'HOAT_DONG' }).select('_id name code'),
+      Size.find({ status: 'HOAT_DONG' }).select('_id value').sort({ value: 1 })
+    ]);
+
+    // Xác định khoảng giá
+    const productWithMinPrice = await Product.findOne({ status: 'HOAT_DONG' })
+      .sort({ 'variants.price': 1 })
+      .select('variants.price');
+      
+    const productWithMaxPrice = await Product.findOne({ status: 'HOAT_DONG' })
+      .sort({ 'variants.price': -1 })
+      .select('variants.price');
+    
+    // Lấy giá thấp nhất và cao nhất
+    const minProductPrice = productWithMinPrice?.variants[0]?.price || 0;
+    const maxProductPrice = productWithMaxPrice?.variants[0]?.price || 1000000;
+
+    return res.status(200).json({
+      success: true,
+      message: 'Lấy danh sách bộ lọc thành công',
+      data: {
+        brands,
+        categories,
+        materials,
+        colors,
+        sizes,
+        priceRange: {
+          min: minProductPrice,
+          max: maxProductPrice
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách bộ lọc:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Đã xảy ra lỗi khi lấy danh sách bộ lọc',
       error: error.message
     });
   }

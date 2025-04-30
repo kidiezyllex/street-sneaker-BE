@@ -9,7 +9,7 @@ import { STATUS_CODES } from 'http';
 export const authorizeAdmin = (req, res, next) => {
   try {
     // Kiểm tra xem người dùng đã được xác thực chưa
-    if (!req.user) {
+    if (!req.account) {
       return res.status(401).json({
         success: false,
         message: 'Bạn cần đăng nhập để thực hiện hành động này',
@@ -18,7 +18,7 @@ export const authorizeAdmin = (req, res, next) => {
     }
 
     // Kiểm tra xem người dùng có quyền admin không
-    if (req.user.role !== 'ADMIN') {
+    if (req.account.role !== 'ADMIN') {
       return res.status(403).json({
         success: false,
         message: 'Bạn không có quyền thực hiện hành động này',
@@ -47,7 +47,7 @@ export const authorizeAdmin = (req, res, next) => {
 export const authorizeStaffOrAdmin = (req, res, next) => {
   try {
     // Kiểm tra xem người dùng đã được xác thực chưa
-    if (!req.user) {
+    if (!req.account) {
       return res.status(401).json({
         success: false,
         message: 'Bạn cần đăng nhập để thực hiện hành động này',
@@ -56,7 +56,7 @@ export const authorizeStaffOrAdmin = (req, res, next) => {
     }
 
     // Kiểm tra xem người dùng có quyền nhân viên hoặc admin không
-    if (req.user.role !== 'ADMIN' && req.user.role !== 'STAFF') {
+    if (req.account.role !== 'ADMIN' && req.account.role !== 'STAFF') {
       return res.status(403).json({
         success: false,
         message: 'Chỉ nhân viên hoặc admin mới có quyền thực hiện hành động này',

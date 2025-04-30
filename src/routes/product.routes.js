@@ -8,7 +8,8 @@ import {
   updateProductStatus,
   updateProductStock,
   updateProductImages,
-  searchProducts
+  searchProducts,
+  getAllFilters
 } from '../controllers/product.controller.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
 import { authorizeAdmin } from '../middlewares/role.middleware.js';
@@ -90,41 +91,60 @@ router.post('/', authenticate, authorizeAdmin, createProduct);
  *         name: name
  *         schema:
  *           type: string
+ *         description: Tìm kiếm theo tên sản phẩm
  *       - in: query
  *         name: brand
  *         schema:
  *           type: string
+ *         description: Lọc theo ID thương hiệu (có thể truyền nhiều ID, phân tách bằng dấu phẩy)
  *       - in: query
  *         name: category
  *         schema:
  *           type: string
+ *         description: Lọc theo ID danh mục (có thể truyền nhiều ID, phân tách bằng dấu phẩy)
  *       - in: query
  *         name: material
  *         schema:
  *           type: string
+ *         description: Lọc theo ID chất liệu
+ *       - in: query
+ *         name: color
+ *         schema:
+ *           type: string
+ *         description: Lọc theo ID màu sắc (có thể truyền nhiều ID, phân tách bằng dấu phẩy)
+ *       - in: query
+ *         name: size
+ *         schema:
+ *           type: string
+ *         description: Lọc theo ID kích cỡ (có thể truyền nhiều ID, phân tách bằng dấu phẩy)
  *       - in: query
  *         name: minPrice
  *         schema:
  *           type: number
+ *         description: Giá thấp nhất
  *       - in: query
  *         name: maxPrice
  *         schema:
  *           type: number
+ *         description: Giá cao nhất
  *       - in: query
  *         name: status
  *         schema:
  *           type: string
  *           enum: [HOAT_DONG, KHONG_HOAT_DONG]
+ *         description: Trạng thái sản phẩm
  *       - in: query
  *         name: page
  *         schema:
  *           type: integer
  *           default: 1
+ *         description: Số trang
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
  *           default: 10
+ *         description: Số lượng sản phẩm mỗi trang
  *     responses:
  *       200:
  *         description: Lấy danh sách sản phẩm thành công
@@ -135,9 +155,24 @@ router.get('/', getProducts);
 
 /**
  * @swagger
+ * /api/products/filters:
+ *   get:
+ *     summary: Lấy tất cả các thuộc tính lọc sản phẩm
+ *     tags: [Products]
+ *     description: Trả về danh sách các thuộc tính lọc như màu sắc, kích cỡ, thương hiệu, danh mục, chất liệu và khoảng giá
+ *     responses:
+ *       200:
+ *         description: Lấy danh sách bộ lọc thành công
+ *       500:
+ *         description: Lỗi máy chủ
+ */
+router.get('/filters', getAllFilters);
+
+/**
+ * @swagger
  * /api/products/search:
  *   get:
- *     summary: Tìm kiếm sản phẩm theo từ khóa
+ *     summary: Tìm kiếm sản phẩm theo từ khóa kết hợp với bộ lọc
  *     tags: [Products]
  *     parameters:
  *       - in: query
@@ -145,16 +180,54 @@ router.get('/', getProducts);
  *         required: true
  *         schema:
  *           type: string
+ *         description: Từ khóa tìm kiếm (theo tên hoặc mã sản phẩm)
+ *       - in: query
+ *         name: brand
+ *         schema:
+ *           type: string
+ *         description: Lọc theo ID thương hiệu (có thể truyền nhiều ID, phân tách bằng dấu phẩy)
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *         description: Lọc theo ID danh mục (có thể truyền nhiều ID, phân tách bằng dấu phẩy)
+ *       - in: query
+ *         name: material
+ *         schema:
+ *           type: string
+ *         description: Lọc theo ID chất liệu
+ *       - in: query
+ *         name: color
+ *         schema:
+ *           type: string
+ *         description: Lọc theo ID màu sắc (có thể truyền nhiều ID, phân tách bằng dấu phẩy)
+ *       - in: query
+ *         name: size
+ *         schema:
+ *           type: string
+ *         description: Lọc theo ID kích cỡ (có thể truyền nhiều ID, phân tách bằng dấu phẩy)
+ *       - in: query
+ *         name: minPrice
+ *         schema:
+ *           type: number
+ *         description: Giá thấp nhất
+ *       - in: query
+ *         name: maxPrice
+ *         schema:
+ *           type: number
+ *         description: Giá cao nhất
  *       - in: query
  *         name: page
  *         schema:
  *           type: integer
  *           default: 1
+ *         description: Số trang
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
  *           default: 10
+ *         description: Số lượng sản phẩm mỗi trang
  *     responses:
  *       200:
  *         description: Tìm kiếm sản phẩm thành công

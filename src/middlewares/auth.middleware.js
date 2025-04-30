@@ -12,13 +12,17 @@ export const authenticate = async (req, res, next) => {
   try {
     let token;
     
+    console.log('Headers:', req.headers);
+    
     // Lấy token từ Authorization header
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
       token = req.headers.authorization.split(' ')[1];
+      console.log('Token được trích xuất:', token);
     }
     
     // Kiểm tra token tồn tại
     if (!token) {
+      console.log('Không tìm thấy token trong Authorization header');
       return res.status(401).json({
         status: false,
         message: 'Không có token, từ chối truy cập',
@@ -29,25 +33,36 @@ export const authenticate = async (req, res, next) => {
     }
     
     // Xác thực token
-    const decoded = jwt.verify(token, config.jwtSecret);
+    try {
+      const decoded = jwt.verify(token, config.jwtSecret);
+      console.log('Token được giải mã thành công:', decoded);
     
-    // Tìm người dùng từ token
-    const account = await Account.findById(decoded.id).select('-password');
-    
-    if (!account) {
-      return res.status(401).json({
-        status: false,
-        message: 'Tài khoản không tồn tại',
-        data: null,
-        errors: {},
-        timestamp: new Date().toISOString()
-      });
+      // Tìm người dùng từ token
+      const account = await Account.findById(decoded.id).select('-password');
+      
+      if (!account) {
+        console.log('Không tìm thấy tài khoản với ID:', decoded.id);
+        return res.status(401).json({
+          status: false,
+          message: 'Tài khoản không tồn tại',
+          data: null,
+          errors: {},
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+      console.log('Xác thực thành công, tài khoản:', account);
+      
+      // Gán thông tin người dùng vào request
+      req.account = account;
+      next();
+    } catch (jwtError) {
+      console.error('Lỗi xác thực JWT:', jwtError);
+      throw jwtError;
     }
-    
-    // Gán thông tin người dùng vào request
-    req.account = account;
-    next();
   } catch (error) {
+    console.error('Lỗi xác thực:', error);
+    
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({
         status: false,
@@ -68,7 +83,6 @@ export const authenticate = async (req, res, next) => {
       });
     }
     
-    console.error('Lỗi xác thực:', error);
     res.status(500).json({
       status: false,
       message: 'Lỗi server',
@@ -145,6 +159,8 @@ export const protect = async (req, res, next) => {
     req.account = currentAccount;
     next();
   } catch (error) {
+    console.error('Lỗi xác thực:', error);
+    
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({
         status: false,
@@ -165,7 +181,6 @@ export const protect = async (req, res, next) => {
       });
     }
     
-    console.error('Lỗi xác thực:', error);
     res.status(500).json({
       status: false,
       message: 'Lỗi server trong quá trình xác thực',
@@ -180,7 +195,7 @@ export const protect = async (req, res, next) => {
  * Middleware kiểm tra vai trò admin
  */
 export const isAdmin = (req, res, next) => {
-  if (req.account && req.account.role === 'admin') {
+  if (req.account && req.account.role === 'ADMIN') {
     next();
   } else {
     res.status(403).json({
@@ -194,7 +209,7 @@ export const isAdmin = (req, res, next) => {
  * Alias cho middleware isAdmin, để phù hợp với coding style trong routes
  */
 export const admin = (req, res, next) => {
-  if (req.account && req.account.role === 'admin') {
+  if (req.account && req.account.role === 'ADMIN') {
     next();
   } else {
     res.status(403).json({
@@ -229,7 +244,7 @@ export const restrictTo = (...roles) => {
 export const checkDepartmentAccess = async (req, res, next) => {
   try {
     // Nếu là admin, cho phép truy cập tất cả
-    if (req.account.role === 'admin') {
+    if (req.account.role === 'ADMIN') {
       return next();
     }
     
