@@ -13,7 +13,7 @@ export const scanQRCode = async (qrCode) => {
     
     try {
       orderData = JSON.parse(qrCode);
-    } catch (e) {
+    } catch {
       const matches = qrCode.match(/ORD-\d{6}-\d{4}/);
       if (matches && matches[0]) {
         orderData = { orderId: matches[0] };

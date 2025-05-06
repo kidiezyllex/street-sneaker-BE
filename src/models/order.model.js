@@ -94,7 +94,7 @@ orderSchema.pre('save', async function(next) {
         const year = date.getFullYear().toString().slice(-2);
         const month = (date.getMonth() + 1).toString().padStart(2, '0');
         code = `DH${year}${month}${(count + 1).toString().padStart(4, '0')}`;
-      } catch (err) {
+      } catch {
         // Nếu có lỗi khi đếm, sinh code random dự phòng
         code = `DH${Date.now()}${Math.floor(Math.random() * 10000)}`;
       }
@@ -105,7 +105,7 @@ orderSchema.pre('save', async function(next) {
       this.code = `DH${Date.now()}${Math.floor(Math.random() * 10000)}`;
     }
     next();
-  } catch (error) {
+  } catch {
     // Nếu có lỗi, vẫn cố gắng sinh code random để không bị null
     this.code = `DH${Date.now()}${Math.floor(Math.random() * 10000)}`;
     next();

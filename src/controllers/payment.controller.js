@@ -13,7 +13,6 @@ import moment from 'moment';
 export const createPayment = async (req, res) => {
   try {
     const { order: orderId, amount, method, bankTransferInfo, note } = req.body;
-    const staffId = req.account._id; // Giả sử người tạo là nhân viên đang đăng nhập
 
     // --- Validation ---
     if (!orderId || !amount || !method) {

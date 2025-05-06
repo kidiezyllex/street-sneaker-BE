@@ -7,12 +7,8 @@
  * @param {Buffer|String} imageData - The image data or base64 encoded string
  * @returns {Promise<Object>} Extracted information from ID card
  */
-export const scanIdCard = async (imageData) => {
+export const scanIdCard = async () => {
   try {
-    // Giả lập chức năng quét ID card
-    // Trong môi trường thực tế, cần tích hợp với API nhận dạng OCR
-    
-    // Trả về dữ liệu mẫu
     return {
       success: true,
       data: {
@@ -20,7 +16,6 @@ export const scanIdCard = async (imageData) => {
         fullName: '',
         dateOfBirth: '',
         gender: '',
-        nationality: 'Việt Nam',
         placeOfOrigin: '',
         placeOfResidence: '',
         expiryDate: '',

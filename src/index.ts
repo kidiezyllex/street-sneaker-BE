@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import { connectDB } from './config/database.js';
 import { registerRoutes } from './routes.js';
@@ -26,8 +26,12 @@ app.use(cors({
 }));
 app.use(express.static('public')); // Thư mục chứa static files
 
-app.use('/_next/image', (req: any, res: any, next: any) => {
-  const imageUrl = decodeURIComponent(req.query.url);
+app.use('/_next/image', (req: Request, res: Response) => {
+  const urlParam = req.query.url;
+  if (typeof urlParam !== 'string') {
+    return res.status(400).send('Invalid image url');
+  }
+  const imageUrl = decodeURIComponent(urlParam);
   if (imageUrl.startsWith('https://')) {
     res.redirect(imageUrl);
   } else {

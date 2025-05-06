@@ -1,5 +1,3 @@
-import { STATUS_CODES } from 'http';
-
 /**
  * Middleware kiểm tra quyền admin
  * @param {object} req - Express request object

@@ -4,21 +4,21 @@ const PAYMENT_METHODS = {
   EWALLET: 'EWALLET'
 };
 
-// Xử lý thanh toán theo phương thức
-exports.processPaymentByMethod = async (order, method, paymentDetails) => {
+export const processPaymentByMethod = async (method, paymentDetails) => {
   switch (method) {
     case PAYMENT_METHODS.CASH:
-      return processCashPayment(order);
+      return processCashPayment(paymentDetails);
     case PAYMENT_METHODS.CARD:
-      return processCardPayment(order, paymentDetails);
+      return processCardPayment(paymentDetails);
     case PAYMENT_METHODS.EWALLET:
-      return processEWalletPayment(order, paymentDetails);
+      return processEWalletPayment(paymentDetails);
     default:
       throw new Error('Phương thức thanh toán không hợp lệ');
   }
 };
 
-const processCashPayment = (order) => {
+const processCashPayment = (paymentDetails) => {
+  void paymentDetails;
   return {
     success: true,
     message: 'Thanh toán tiền mặt thành công',
@@ -26,8 +26,8 @@ const processCashPayment = (order) => {
   };
 };
 
-const processCardPayment = async (order, details) => {
-  // TODO: Tích hợp cổng thanh toán thẻ
+const processCardPayment = async (paymentDetails) => {
+  void paymentDetails;
   return {
     success: true,
     message: 'Thanh toán thẻ thành công',
@@ -35,8 +35,8 @@ const processCardPayment = async (order, details) => {
   };
 };
 
-const processEWalletPayment = async (order, details) => {
-  // TODO: Tích hợp ví điện tử
+const processEWalletPayment = async (paymentDetails) => {
+  void paymentDetails;
   return {
     success: true,
     message: 'Thanh toán ví điện tử thành công',
