@@ -6,7 +6,6 @@ import { errorHandler, notFound } from "./middlewares/error.middleware.js";
 import { Request, Response } from "express";
 import { Router } from 'express';
 
-// Import routes
 import authRoutes from "./routes/auth.routes.js";
 import accountRoutes from './routes/account.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
@@ -21,13 +20,10 @@ import returnRoutes from './routes/return.routes.js';
 const router = Router();
 export async function registerRoutes(app: Express): Promise<Server> {
   try {
-    // Connect to database
     await connectDB();
     
-    // Setup Swagger FIRST - before any error handlers
     setupSwagger(app);
     
-    // Thêm route kiểm tra trực tiếp cho swagger
     app.get("/api-docs-test", (req: Request, res: Response) => {
       res.status(200).json({ 
         success: true, 
@@ -35,7 +31,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     });
     
-    // API routes
     app.use("/api/auth", authRoutes);
     app.use("/api/upload", uploadRoutes);
     app.use("/api/accounts", accountRoutes);
@@ -55,7 +50,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     });
     
-    // Error handling middlewares LAST
     app.use(notFound);
     app.use(errorHandler);
     
