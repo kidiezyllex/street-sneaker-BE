@@ -1,6 +1,9 @@
 import Payment from '../models/payment.model.js';
 import Order from '../models/order.model.js';
 import mongoose from 'mongoose';
+import { createPayment as createVNPayURL, verifyPayment } from '../utils/vnpay-fixed.js';
+import querystring from 'querystring';
+import moment from 'moment';
 
 /**
  * Tạo thanh toán mới
@@ -347,6 +350,207 @@ export const deletePayment = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi xóa thanh toán',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Tạo URL thanh toán VNPay
+ * @route POST /api/payments/create-vnpay-url
+ * @access Private
+ */
+export const createVNPayPaymentUrl = async (req, res) => {
+  try {
+    const { orderId, amount, orderInfo, orderCode } = req.body;
+    let clientIp = req.ip || req.headers['x-forwarded-for'];
+    if (clientIp) {
+        const ips = clientIp.split(',');
+        clientIp = ips[0].trim();
+    }
+
+    if (!clientIp || clientIp === '::1') {
+      clientIp = '127.0.0.1';
+    } else if (clientIp.substr(0, 7) === '::ffff:') {
+      clientIp = clientIp.substr(7);
+    }
+
+    if (!orderId || !amount || !orderInfo || !orderCode) {
+      return res.status(400).json({
+        success: false,
+        message: 'Thiếu thông tin thanh toán: orderId, amount, orderInfo, orderCode phải được cung cấp'
+      });
+    }
+
+    // Sử dụng hàm mới từ vnpay-fixed.js với tên đã đổi
+    const paymentUrl = createVNPayURL(orderId, amount, orderInfo, clientIp, orderCode);
+    
+    return res.status(200).json({
+      success: true,
+      data: { paymentUrl }
+    });
+  } catch (error) {
+    console.error('Lỗi khi tạo URL thanh toán VNPay:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Đã xảy ra lỗi khi tạo URL thanh toán',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Xử lý callback từ VNPay
+ * @route GET /api/payments/vnpay-return
+ * @access Public
+ */
+export const handleVNPayReturn = async (req, res) => {
+  try {
+    const vnpParams = req.query;
+    
+    // Sử dụng hàm mới từ vnpay-fixed.js
+    const isValidSignature = verifyPayment(vnpParams);
+    if (!isValidSignature) {
+      // VNPay's own error page will show if their signature check fails.
+      // If our internal check fails, we can redirect to our own error message.
+      console.error('VNPay Return: Invalid signature based on our internal verification.');
+      // It's better to redirect to a user-friendly page than return JSON here,
+      // as this endpoint is hit by browser redirect from VNPay.
+      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/payment-result?success=false&message=InvalidSignature`);
+    }
+
+    const txnRef = vnpParams['vnp_TxnRef']; // This is the orderCode
+    const orderCode = txnRef;
+    
+    const transactionNo = vnpParams['vnp_TransactionNo']; // VNPay's transaction number
+    const amount = parseInt(vnpParams['vnp_Amount']) / 100; // Convert from smallest currency unit
+    const responseCode = vnpParams['vnp_ResponseCode']; // VNPay's response code ('00' for success)
+
+    // Find the order using the orderCode from vnp_TxnRef
+    const order = await Order.findOne({ code: orderCode });
+
+    if (!order) {
+      console.error(`VNPay Return: Order not found with code: ${orderCode}`);
+      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/payment-result?success=false&message=OrderNotFound&orderCode=${orderCode}`);
+    }
+    const orderIdForPaymentRecord = order._id; // Use the actual MongoDB _id for the payment record
+
+    // Tạo payment record
+    const payment = new Payment({
+      order: orderIdForPaymentRecord, // Use the actual ObjectId
+      amount,
+      method: 'VNPAY',
+      status: responseCode === '00' ? 'COMPLETED' : 'FAILED',
+      vnpayInfo: {
+        vnp_TransactionNo: transactionNo,
+        vnp_PayDate: vnpParams['vnp_PayDate'] ? moment(vnpParams['vnp_PayDate'], 'YYYYMMDDHHmmss').toDate() : new Date(),
+        vnp_BankCode: vnpParams['vnp_BankCode'],
+        vnp_CardType: vnpParams['vnp_CardType'],
+        vnp_OrderInfo: vnpParams['vnp_OrderInfo'], // Store the order info returned by VNPay
+        vnp_ResponseCode: responseCode
+      }
+    });
+
+    await payment.save();
+
+    // Cập nhật trạng thái đơn hàng if payment was successful
+    if (responseCode === '00') {
+      // order object is already fetched
+      const totalPaidViaVnpay = amount; // Assuming this is the full payment for this transaction
+      
+      // You might want to fetch all 'COMPLETED' VNPAY payments for this order
+      // if partial payments or multiple VNPAY attempts are possible.
+      // For now, we assume this 'amount' contributes to the order's total.
+
+      if (totalPaidViaVnpay >= order.total) {
+        order.paymentStatus = 'PAID';
+        // Only change orderStatus if it makes sense in your workflow (e.g., from PENDING_PAYMENT)
+        if (order.orderStatus === 'PENDING_PAYMENT' || order.orderStatus === 'pending') { // Adjust based on your actual statuses
+             order.orderStatus = 'CHO_GIAO_HANG'; // Or 'PROCESSING', etc.
+        }
+      } else if (totalPaidViaVnpay > 0) {
+        // This logic might need adjustment if only full payment marks order as 'PAID'
+        order.paymentStatus = 'PARTIAL_PAID';
+      }
+      // Ensure paymentMethod reflects VNPAY if not already set (though it should be)
+      order.paymentMethod = 'BANK_TRANSFER'; // Or your specific enum for VNPAY
+      await order.save();
+    } else {
+        // Payment failed, update order status if necessary (e.g., back to PENDING_PAYMENT or FAILED_PAYMENT)
+        order.paymentStatus = 'FAILED'; // Or keep as PENDING / PENDING_PAYMENT
+        // Optionally update order.orderStatus if payment failure means order cancellation or needs attention
+        await order.save();
+    }
+
+    // Redirect về trang kết quả thanh toán
+    const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/payment-result?` + 
+      querystring.stringify({
+        orderCode: order.code, // Send orderCode back to frontend
+        success: responseCode === '00',
+        message: responseCode === '00' ? 'Thanh toán thành công' : 'Thanh toán thất bại',
+        vnp_TransactionNo: transactionNo, // Optionally pass VNPay transaction number
+        amount: amount
+      });
+
+    return res.redirect(redirectUrl);
+  } catch (error) {
+    console.error('Lỗi khi xử lý callback VNPay:', error);
+    // Generic error redirect
+    return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/payment-result?success=false&message=InternalError`);
+  }
+};
+
+/**
+ * Tạo thanh toán COD
+ * @route POST /api/payments/cod
+ * @access Private
+ */
+export const createCODPayment = async (req, res) => {
+  try {
+    const { orderId, amount } = req.body;
+
+    if (!orderId || !amount) {
+      return res.status(400).json({
+        success: false,
+        message: 'Thiếu thông tin thanh toán'
+      });
+    }
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy đơn hàng'
+      });
+    }
+
+    // Tạo payment record cho COD
+    const payment = new Payment({
+      order: orderId,
+      amount,
+      method: 'COD',
+      status: 'PENDING',
+      note: 'Thanh toán khi nhận hàng'
+    });
+
+    await payment.save();
+
+    // Cập nhật trạng thái đơn hàng
+    order.paymentMethod = 'COD';
+    order.paymentStatus = 'PENDING';
+    order.orderStatus = 'CHO_GIAO_HANG';
+    await order.save();
+
+    return res.status(201).json({
+      success: true,
+      message: 'Đã tạo thanh toán COD',
+      data: payment
+    });
+  } catch (error) {
+    console.error('Lỗi khi tạo thanh toán COD:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Đã xảy ra lỗi khi tạo thanh toán COD',
       error: error.message
     });
   }

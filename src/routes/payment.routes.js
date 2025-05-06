@@ -5,7 +5,10 @@ import {
   getPaymentById,
   updatePaymentStatus,
   deletePayment,
-  getPaymentsByOrderId
+  getPaymentsByOrderId,
+  createVNPayPaymentUrl,
+  handleVNPayReturn,
+  createCODPayment
 } from '../controllers/payment.controller.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
 import { authorizeAdmin, authorizeStaffOrAdmin } from '../middlewares/role.middleware.js'; // Giả sử bạn có middleware này
@@ -280,5 +283,97 @@ router.put('/:id', authenticate, authorizeAdmin, updatePaymentStatus);
  */
 router.delete('/:id', authenticate, authorizeAdmin, deletePayment);
 
+/**
+ * @swagger
+ * /api/payments/create-vnpay-url:
+ *   post:
+ *     summary: Tạo URL thanh toán VNPay
+ *     tags: [Payments]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - orderId
+ *               - amount
+ *               - orderInfo
+ *             properties:
+ *               orderId:
+ *                 type: string
+ *               amount:
+ *                 type: number
+ *               orderInfo:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: URL thanh toán được tạo thành công
+ *       400:
+ *         description: Thiếu thông tin thanh toán
+ *       500:
+ *         description: Lỗi máy chủ
+ */
+router.post('/create-vnpay-url', authenticate, createVNPayPaymentUrl);
+
+/**
+ * @swagger
+ * /api/payments/vnpay-return:
+ *   get:
+ *     summary: Xử lý callback từ VNPay
+ *     tags: [Payments]
+ *     parameters:
+ *       - in: query
+ *         name: vnp_ResponseCode
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: vnp_TransactionNo
+ *         required: true
+ *         schema:
+ *           type: string
+ *       # ... other VNPay parameters
+ *     responses:
+ *       302:
+ *         description: Redirect to payment result page
+ */
+router.get('/vnpay-return', handleVNPayReturn);
+
+/**
+ * @swagger
+ * /api/payments/cod:
+ *   post:
+ *     summary: Tạo thanh toán COD
+ *     tags: [Payments]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - orderId
+ *               - amount
+ *             properties:
+ *               orderId:
+ *                 type: string
+ *               amount:
+ *                 type: number
+ *     responses:
+ *       201:
+ *         description: Thanh toán COD được tạo thành công
+ *       400:
+ *         description: Thiếu thông tin thanh toán
+ *       404:
+ *         description: Không tìm thấy đơn hàng
+ *       500:
+ *         description: Lỗi máy chủ
+ */
+router.post('/cod', authenticate, createCODPayment);
 
 export default router; 

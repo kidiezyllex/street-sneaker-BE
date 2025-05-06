@@ -17,7 +17,7 @@ const paymentSchema = new mongoose.Schema({
   },
   method: {
     type: String,
-    enum: ['CASH', 'BANK_TRANSFER'],
+    enum: ['CASH', 'BANK_TRANSFER', 'VNPAY', 'COD'],
     required: true
   },
   bankTransferInfo: {
@@ -25,6 +25,14 @@ const paymentSchema = new mongoose.Schema({
     accountNumber: String,
     transactionCode: String,
     transferDate: Date
+  },
+  vnpayInfo: {
+    vnp_TransactionNo: String,
+    vnp_PayDate: Date,
+    vnp_BankCode: String,
+    vnp_CardType: String,
+    vnp_OrderInfo: String,
+    vnp_ResponseCode: String
   },
   status: {
     type: String,
