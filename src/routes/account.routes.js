@@ -65,227 +65,6 @@ router.get('/', protect, admin, getAllAccounts);
 
 /**
  * @swagger
- * /account/{id}:
- *   get:
- *     summary: Lấy thông tin chi tiết tài khoản theo ID (Admin)
- *     tags: [Account (Admin)]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: string
- *         required: true
- *         description: ID tài khoản
- *     responses:
- *       200:
- *         description: Thông tin chi tiết tài khoản
- *       401:
- *         description: "Không được phép (Không phải Admin)"
- *       404:
- *         description: "Không tìm thấy tài khoản"
- *       500:
- *         description: "Lỗi máy chủ"
- */
-router.get('/:id', protect, admin, getAccountById);
-
-/**
- * @swagger
- * /account/{id}:
- *   put:
- *     summary: Cập nhật thông tin tài khoản bởi Admin
- *     tags: [Account (Admin)]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: string
- *         required: true
- *         description: ID tài khoản cần cập nhật
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               fullName:
- *                 type: string
- *               email:
- *                 type: string
- *               phoneNumber:
- *                 type: string
- *               gender:
- *                 type: string
- *                 enum: [Nam, Nữ, Khác]
- *               birthday:
- *                 type: string
- *                 format: date
- *               citizenId:
- *                 type: string
- *               avatar:
- *                 type: string
- *                 format: url
- *               status:
- *                 type: string
- *                 enum: [HOAT_DONG, KHONG_HOAT_DONG]
- *             example:
- *               fullName: "Admin Cập Nhật"
- *               email: "updated.email@example.com"
- *               phoneNumber: "0987654322"
- *               gender: "Nữ"
- *               birthday: "1995-05-15"
- *               citizenId: "987654321012"
- *               avatar: "https://example.com/avatar_updated.jpg"
- *               status: "HOAT_DONG"
- *     responses:
- *       200:
- *         description: "Cập nhật tài khoản thành công"
- *       400:
- *         description: "Dữ liệu không hợp lệ (vd: email/sđt đã tồn tại)"
- *       401:
- *         description: "Không được phép (Không phải Admin)"
- *       404:
- *         description: "Không tìm thấy tài khoản"
- *       500:
- *         description: "Lỗi máy chủ"
- */
-router.put('/:id', protect, admin, updateAccount);
-
-/**
- * @swagger
- * /account/{id}/status:
- *   put:
- *     summary: Cập nhật trạng thái tài khoản (kích hoạt/vô hiệu hóa) (Admin)
- *     tags: [Account (Admin)]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: string
- *         required: true
- *         description: ID tài khoản
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               status:
- *                 type: string
- *                 enum: [HOAT_DONG, KHONG_HOAT_DONG]
- *                 required: true
- *             example:
- *               status: "KHONG_HOAT_DONG"
- *     responses:
- *       200:
- *         description: "Cập nhật trạng thái thành công"
- *       400:
- *         description: "Trạng thái không hợp lệ hoặc thiếu"
- *       401:
- *         description: "Không được phép (Không phải Admin)"
- *       403:
- *         description: "Không thể vô hiệu hóa tài khoản Admin chính"
- *       404:
- *         description: "Không tìm thấy tài khoản"
- *       500:
- *         description: "Lỗi máy chủ"
- */
-router.put('/:id/status', protect, admin, updateAccountStatus);
-
-/**
- * @swagger
- * /account/{id}:
- *   delete:
- *     summary: Xóa tài khoản (Admin)
- *     tags: [Account (Admin)]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: string
- *         required: true
- *         description: ID tài khoản cần xóa
- *     responses:
- *       200:
- *         description: "Xóa tài khoản thành công"
- *       401:
- *         description: "Không được phép (Không phải Admin)"
- *       403:
- *         description: "Không thể xóa tài khoản Admin chính"
- *       404:
- *         description: "Không tìm thấy tài khoản"
- *       500:
- *         description: "Lỗi máy chủ"
- */
-router.delete('/:id', protect, admin, deleteAccount);
-
-/**
- * @swagger
- * /account/register:
- *   post:
- *     summary: Tạo tài khoản mới (Đăng ký)
- *     tags: [Account (Public)]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               fullName:
- *                 type: string
- *                 required: true
- *               email:
- *                 type: string
- *                 format: email
- *                 required: true
- *               password:
- *                 type: string
- *                 required: true
- *               phoneNumber:
- *                 type: string
- *                 required: true
- *               role:
- *                 type: string
- *                 enum: [CUSTOMER, STAFF, ADMIN]
- *                 default: CUSTOMER
- *               gender:
- *                 type: string
- *                 enum: [Nam, Nữ, Khác]
- *               birthday:
- *                 type: string
- *                 format: date
- *               citizenId:
- *                  type: string
- *             example:
- *               fullName: "Người Dùng Mới"
- *               email: "newuser@example.com"
- *               password: "password123"
- *               phoneNumber: "0123456789"
- *               gender: "Nam"
- *               birthday: "2000-01-01"
- *               citizenId: "123456789012"
- *     responses:
- *       201:
- *         description: Tạo tài khoản thành công
- *       400:
- *         description: Dữ liệu không hợp lệ hoặc Email/SĐT đã được sử dụng
- *       500:
- *         description: Lỗi máy chủ
- */
-router.post('/register', createAccount);
-
-/**
- * @swagger
  * /account/profile:
  *   get:
  *     summary: Lấy hồ sơ cá nhân của người dùng đang đăng nhập
@@ -550,5 +329,226 @@ router.delete('/profile/addresses/:addressId', protect, (req, res, next) => {
     req.params.id = req.account._id;
     next();
 }, deleteAddress);
+
+/**
+ * @swagger
+ * /account/{id}:
+ *   get:
+ *     summary: Lấy thông tin chi tiết tài khoản theo ID (Admin)
+ *     tags: [Account (Admin)]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID tài khoản
+ *     responses:
+ *       200:
+ *         description: Thông tin chi tiết tài khoản
+ *       401:
+ *         description: "Không được phép (Không phải Admin)"
+ *       404:
+ *         description: "Không tìm thấy tài khoản"
+ *       500:
+ *         description: "Lỗi máy chủ"
+ */
+router.get('/:id', protect, admin, getAccountById);
+
+/**
+ * @swagger
+ * /account/{id}:
+ *   put:
+ *     summary: Cập nhật thông tin tài khoản bởi Admin
+ *     tags: [Account (Admin)]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID tài khoản cần cập nhật
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               fullName:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               phoneNumber:
+ *                 type: string
+ *               gender:
+ *                 type: string
+ *                 enum: [Nam, Nữ, Khác]
+ *               birthday:
+ *                 type: string
+ *                 format: date
+ *               citizenId:
+ *                 type: string
+ *               avatar:
+ *                 type: string
+ *                 format: url
+ *               status:
+ *                 type: string
+ *                 enum: [HOAT_DONG, KHONG_HOAT_DONG]
+ *             example:
+ *               fullName: "Admin Cập Nhật"
+ *               email: "updated.email@example.com"
+ *               phoneNumber: "0987654322"
+ *               gender: "Nữ"
+ *               birthday: "1995-05-15"
+ *               citizenId: "987654321012"
+ *               avatar: "https://example.com/avatar_updated.jpg"
+ *               status: "HOAT_DONG"
+ *     responses:
+ *       200:
+ *         description: "Cập nhật tài khoản thành công"
+ *       400:
+ *         description: "Dữ liệu không hợp lệ (vd: email/sđt đã tồn tại)"
+ *       401:
+ *         description: "Không được phép (Không phải Admin)"
+ *       404:
+ *         description: "Không tìm thấy tài khoản"
+ *       500:
+ *         description: "Lỗi máy chủ"
+ */
+router.put('/:id', protect, admin, updateAccount);
+
+/**
+ * @swagger
+ * /account/{id}/status:
+ *   put:
+ *     summary: Cập nhật trạng thái tài khoản (kích hoạt/vô hiệu hóa) (Admin)
+ *     tags: [Account (Admin)]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID tài khoản
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [HOAT_DONG, KHONG_HOAT_DONG]
+ *                 required: true
+ *             example:
+ *               status: "KHONG_HOAT_DONG"
+ *     responses:
+ *       200:
+ *         description: "Cập nhật trạng thái thành công"
+ *       400:
+ *         description: "Trạng thái không hợp lệ hoặc thiếu"
+ *       401:
+ *         description: "Không được phép (Không phải Admin)"
+ *       403:
+ *         description: "Không thể vô hiệu hóa tài khoản Admin chính"
+ *       404:
+ *         description: "Không tìm thấy tài khoản"
+ *       500:
+ *         description: "Lỗi máy chủ"
+ */
+router.put('/:id/status', protect, admin, updateAccountStatus);
+
+/**
+ * @swagger
+ * /account/{id}:
+ *   delete:
+ *     summary: Xóa tài khoản (Admin)
+ *     tags: [Account (Admin)]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID tài khoản cần xóa
+ *     responses:
+ *       200:
+ *         description: "Xóa tài khoản thành công"
+ *       401:
+ *         description: "Không được phép (Không phải Admin)"
+ *       403:
+ *         description: "Không thể xóa tài khoản Admin chính"
+ *       404:
+ *         description: "Không tìm thấy tài khoản"
+ *       500:
+ *         description: "Lỗi máy chủ"
+ */
+router.delete('/:id', protect, admin, deleteAccount);
+
+/**
+ * @swagger
+ * /account/register:
+ *   post:
+ *     summary: Tạo tài khoản mới (Đăng ký)
+ *     tags: [Account (Public)]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               fullName:
+ *                 type: string
+ *                 required: true
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 required: true
+ *               password:
+ *                 type: string
+ *                 required: true
+ *               phoneNumber:
+ *                 type: string
+ *                 required: true
+ *               role:
+ *                 type: string
+ *                 enum: [CUSTOMER, STAFF, ADMIN]
+ *                 default: CUSTOMER
+ *               gender:
+ *                 type: string
+ *                 enum: [Nam, Nữ, Khác]
+ *               birthday:
+ *                 type: string
+ *                 format: date
+ *               citizenId:
+ *                  type: string
+ *             example:
+ *               fullName: "Người Dùng Mới"
+ *               email: "newuser@example.com"
+ *               password: "password123"
+ *               phoneNumber: "0123456789"
+ *               gender: "Nam"
+ *               birthday: "2000-01-01"
+ *               citizenId: "123456789012"
+ *     responses:
+ *       201:
+ *         description: Tạo tài khoản thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ hoặc Email/SĐT đã được sử dụng
+ *       500:
+ *         description: Lỗi máy chủ
+ */
+router.post('/register', createAccount);
 
 export default router; 

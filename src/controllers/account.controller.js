@@ -92,11 +92,15 @@ export const createAccount = async (req, res) => {
     const { fullName, email, password, phoneNumber, role, gender, birthday, citizenId } = req.body;
     
     // Kiểm tra email hoặc số điện thoại đã tồn tại
+    const queryConditions = [];
+    if (email && typeof email === 'string') {
+      queryConditions.push({ email: email.trim() });
+    }
+    if (phoneNumber && typeof phoneNumber === 'string') {
+      queryConditions.push({ phoneNumber: phoneNumber.trim() });
+    }
     const existingAccount = await Account.findOne({
-      $or: [
-        { email: email.trim() },
-        { phoneNumber: phoneNumber.trim() }
-      ]
+      $or: queryConditions
     });
     
     if (existingAccount) {
@@ -471,7 +475,8 @@ export const deleteAddress = async (req, res) => {
 // Lấy thông tin cá nhân người dùng đang đăng nhập
 export const getProfile = async (req, res) => {
   try {
-    const account = await Account.findById(req.account._id).select('-password');
+    const accountId = req.account._id || req.account.id;
+    const account = await Account.findById(accountId).select('-password');
     
     if (!account) {
       return res.status(404).json({
