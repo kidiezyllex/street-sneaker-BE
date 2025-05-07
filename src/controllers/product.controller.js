@@ -288,7 +288,7 @@ export const getProductById = async (req, res) => {
 export const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const { 
+    let { 
       name, 
       brand, 
       category, 
@@ -305,29 +305,38 @@ export const updateProduct = async (req, res) => {
         message: 'ID sản phẩm không hợp lệ'
       });
     }
-    
-    // Kiểm tra các tham chiếu ObjectId nếu được cung cấp
+
+    // Xử lý brand, category, material: cho phép truyền ObjectId hoặc tên
+    let brandId = brand;
+    let categoryId = category;
+    let materialId = material;
+
     if (brand && !mongoose.Types.ObjectId.isValid(brand)) {
-      return res.status(400).json({
-        success: false,
-        message: 'ID thương hiệu không hợp lệ'
-      });
+      // Nếu là tên, tìm hoặc tạo mới
+      const brandDoc = await Brand.findOneAndUpdate(
+        { name: brand },
+        { name: brand, status: 'HOAT_DONG' },
+        { upsert: true, new: true }
+      );
+      brandId = brandDoc._id;
     }
-    
     if (category && !mongoose.Types.ObjectId.isValid(category)) {
-      return res.status(400).json({
-        success: false,
-        message: 'ID danh mục không hợp lệ'
-      });
+      const categoryDoc = await Category.findOneAndUpdate(
+        { name: category },
+        { name: category, status: 'HOAT_DONG' },
+        { upsert: true, new: true }
+      );
+      categoryId = categoryDoc._id;
     }
-    
     if (material && !mongoose.Types.ObjectId.isValid(material)) {
-      return res.status(400).json({
-        success: false,
-        message: 'ID chất liệu không hợp lệ'
-      });
+      const materialDoc = await Material.findOneAndUpdate(
+        { name: material },
+        { name: material, status: 'HOAT_DONG' },
+        { upsert: true, new: true }
+      );
+      materialId = materialDoc._id;
     }
-    
+
     // Kiểm tra từng variant nếu được cung cấp
     if (variants && variants.length > 0) {
       for (const variant of variants) {
@@ -337,14 +346,12 @@ export const updateProduct = async (req, res) => {
             message: 'ID màu sắc không hợp lệ'
           });
         }
-        
         if (variant.sizeId && !mongoose.Types.ObjectId.isValid(variant.sizeId)) {
           return res.status(400).json({
             success: false,
             message: 'ID kích cỡ không hợp lệ'
           });
         }
-        
         if (variant.price && variant.price <= 0) {
           return res.status(400).json({
             success: false,
@@ -353,29 +360,36 @@ export const updateProduct = async (req, res) => {
         }
       }
     }
-    
+
     // Tìm sản phẩm cần cập nhật
     const product = await Product.findById(id);
-    
     if (!product) {
       return res.status(404).json({
         success: false,
         message: 'Không tìm thấy sản phẩm'
       });
     }
-    
+
     // Cập nhật thông tin
     if (name) product.name = name;
-    if (brand) product.brand = brand;
-    if (category) product.category = category;
-    if (material) product.material = material;
+    if (brandId) product.brand = brandId;
+    if (categoryId) product.category = categoryId;
+    if (materialId) product.material = materialId;
     if (description) product.description = description;
     if (weight) product.weight = weight;
     if (variants) product.variants = variants;
     if (status) product.status = status;
-    
+
     await product.save();
-    
+    // Populate thông tin chi tiết trước khi trả về
+    await product.populate([
+      { path: 'brand', select: 'name' },
+      { path: 'category', select: 'name' },
+      { path: 'material', select: 'name' },
+      { path: 'variants.colorId', select: 'name code' },
+      { path: 'variants.sizeId', select: 'value' }
+    ]);
+
     return res.status(200).json({
       success: true,
       message: 'Cập nhật sản phẩm thành công',

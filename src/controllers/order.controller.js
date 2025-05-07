@@ -439,4 +439,56 @@ export const getMyOrders = async (req, res) => {
       error: error.message
     });
   }
+};
+
+/**
+ * Lấy danh sách đơn hàng theo _id của user (dùng cho admin hoặc mục đích đặc biệt)
+ * @route GET /api/orders/user/:userId
+ * @access Private/Admin
+ */
+export const getOrdersByUserId = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { orderStatus, page = 1, limit = 10 } = req.query;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID người dùng không hợp lệ'
+      });
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const filter = { customer: userId };
+    if (orderStatus) {
+      filter.orderStatus = orderStatus;
+    }
+
+    const total = await Order.countDocuments(filter);
+    const orders = await Order.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    return res.status(200).json({
+      success: true,
+      message: 'Lấy danh sách đơn hàng thành công',
+      data: {
+        orders,
+        pagination: {
+          totalItems: total,
+          totalPages: Math.ceil(total / parseInt(limit)),
+          currentPage: parseInt(page),
+          limit: parseInt(limit)
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách đơn hàng theo userId:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Đã xảy ra lỗi khi lấy danh sách đơn hàng',
+      error: error.message
+    });
+  }
 }; 

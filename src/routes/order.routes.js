@@ -6,7 +6,8 @@ import {
   updateOrder,
   cancelOrder,
   updateOrderStatus,
-  getMyOrders
+  getMyOrders,
+  getOrdersByUserId
 } from '../controllers/order.controller.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
 import { authorizeAdmin } from '../middlewares/role.middleware.js';
@@ -362,5 +363,49 @@ router.patch('/:id/cancel', authenticate, cancelOrder);
  *         description: Lỗi máy chủ
  */
 router.patch('/:id/status', authenticate, authorizeAdmin, updateOrderStatus);
+
+/**
+ * @swagger
+ * /api/orders/user/{userId}:
+ *   get:
+ *     summary: Lấy danh sách đơn hàng theo _id của user
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID của người dùng
+ *       - in: query
+ *         name: orderStatus
+ *         schema:
+ *           type: string
+ *         description: Lọc theo trạng thái đơn hàng
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Số trang
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Số lượng đơn hàng mỗi trang
+ *     responses:
+ *       200:
+ *         description: Lấy danh sách đơn hàng thành công
+ *       400:
+ *         description: ID không hợp lệ
+ *       401:
+ *         description: Không có quyền truy cập
+ *       500:
+ *         description: Lỗi máy chủ
+ */
+router.get('/user/:userId', authenticate, authorizeAdmin, getOrdersByUserId);
 
 export default router; 
