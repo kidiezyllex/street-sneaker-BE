@@ -30,7 +30,7 @@ export const createOrder = async (req, res) => {
     // Tạo đơn hàng mới
     const newOrder = new Order({
       customer,
-      staff: req.account._id,
+      staff: req.account ? req.account._id : undefined,
       items,
       voucher,
       subTotal,

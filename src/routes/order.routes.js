@@ -97,7 +97,7 @@ const router = express.Router();
  *       500:
  *         description: Lỗi máy chủ
  */
-router.post('/', authenticate, createOrder);
+router.post('/', createOrder);
 
 /**
  * @swagger
