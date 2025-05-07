@@ -406,6 +406,6 @@ router.patch('/:id/status', authenticate, authorizeAdmin, updateOrderStatus);
  *       500:
  *         description: Lỗi máy chủ
  */
-router.get('/user/:userId', authenticate, authorizeAdmin, getOrdersByUserId);
+router.get('/user/:userId', getOrdersByUserId);
 
 export default router; 
