@@ -6,8 +6,6 @@ import {
   updatePaymentStatus,
   deletePayment,
   getPaymentsByOrderId,
-  createVNPayPaymentUrl,
-  handleVNPayReturn,
   createCODPayment
 } from '../controllers/payment.controller.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
@@ -281,65 +279,6 @@ router.put('/:id', authenticate, authorizeAdmin, updatePaymentStatus);
  *         description: Lỗi máy chủ
  */
 router.delete('/:id', authenticate, authorizeAdmin, deletePayment);
-
-/**
- * @swagger
- * /payments/create-vnpay-url:
- *   post:
- *     summary: Tạo URL thanh toán VNPay
- *     tags: [Payments]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - orderId
- *               - amount
- *               - orderInfo
- *             properties:
- *               orderId:
- *                 type: string
- *               amount:
- *                 type: number
- *               orderInfo:
- *                 type: string
- *     responses:
- *       200:
- *         description: URL thanh toán được tạo thành công
- *       400:
- *         description: Thiếu thông tin thanh toán
- *       500:
- *         description: Lỗi máy chủ
- */
-router.post('/create-vnpay-url', authenticate, createVNPayPaymentUrl);
-
-/**
- * @swagger
- * /payments/vnpay-return:
- *   get:
- *     summary: Xử lý callback từ VNPay
- *     tags: [Payments]
- *     parameters:
- *       - in: query
- *         name: vnp_ResponseCode
- *         required: true
- *         schema:
- *           type: string
- *       - in: query
- *         name: vnp_TransactionNo
- *         required: true
- *         schema:
- *           type: string
- *       # ... other VNPay parameters
- *     responses:
- *       302:
- *         description: Redirect to payment result page
- */
-router.get('/vnpay-return', handleVNPayReturn);
 
 /**
  * @swagger
