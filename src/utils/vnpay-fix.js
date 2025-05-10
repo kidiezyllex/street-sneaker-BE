@@ -4,8 +4,8 @@ const require = createRequire(import.meta.url);
 
 // Load dayjs and required plugins
 import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc.js';
-import timezone from 'dayjs/plugin/timezone.js';
+const utc = require('dayjs/plugin/utc.js');
+const timezone = require('dayjs/plugin/timezone.js');
 
 // Apply plugins
 dayjs.extend(utc);
