@@ -3,7 +3,10 @@ import Order from '../models/order.model.js';
 import mongoose from 'mongoose';
 import { createPayment as createVNPayURL, verifyPayment } from '../utils/vnpay-fixed.js';
 import querystring from 'querystring';
-import moment from 'moment';
+// Removed top-level dayjs imports and extension
+// import dayjs from 'dayjs'; // Use dayjs instead of moment
+// import timezone from 'dayjs/plugin/timezone.js'; // Import the timezone plugin
+// dayjs.extend(timezone); // Extend dayjs with the timezone plugin
 
 /**
  * Tạo thanh toán mới
@@ -442,7 +445,7 @@ export const handleVNPayReturn = async (req, res) => {
       status: responseCode === '00' ? 'COMPLETED' : 'FAILED',
       vnpayInfo: {
         vnp_TransactionNo: transactionNo,
-        vnp_PayDate: vnpParams['vnp_PayDate'] ? moment(vnpParams['vnp_PayDate'], 'YYYYMMDDHHmmss').toDate() : new Date(),
+        vnp_PayDate: vnpParams['vnp_PayDate'] ? dayjs(vnpParams['vnp_PayDate'], 'YYYYMMDDHHmmss').toDate() : new Date(),
         vnp_BankCode: vnpParams['vnp_BankCode'],
         vnp_CardType: vnpParams['vnp_CardType'],
         vnp_OrderInfo: vnpParams['vnp_OrderInfo'], // Store the order info returned by VNPay
@@ -653,6 +656,11 @@ export const createQrVNPay = async (req, res) => {
       clientIp = clientIp.substr(7);
     }
 
+    // Import and extend dayjs with timezone plugin immediately before importing VNPay
+    const dayjs = (await import('dayjs')).default;
+    const timezone = (await import('dayjs/plugin/timezone.js')).default;
+    dayjs.extend(timezone);
+    
     // Import VNPay library
     const { VNPay, ignoreLogger, ProductCode, VnpLocale, dateFormat } = await import('vnpay');
 
@@ -667,8 +675,8 @@ export const createQrVNPay = async (req, res) => {
     });
 
     // Set up expiration date (15 minutes from now)
-    const now = new Date();
-    const tomorrow = new Date(now.getTime() + 15 * 60 * 1000);
+    const now = dayjs();
+    const tomorrow = now.add(15, 'minute');
 
     // Build payment URL
     const paymentUrl = await vnpay.buildPaymentUrl({
@@ -679,8 +687,8 @@ export const createQrVNPay = async (req, res) => {
       vnp_OrderType: ProductCode.Other,
       vnp_ReturnUrl: returnUrl || `${req.protocol}://${req.get('host')}/api/vnpay/check-payment-vnpay`,
       vnp_Locale: VnpLocale.VN,
-      vnp_CreateDate: dateFormat(now),
-      vnp_ExpireDate: dateFormat(tomorrow)
+      vnp_CreateDate: dateFormat(now.toDate()), // Pass Date object if dateFormat expects it
+      vnp_ExpireDate: dateFormat(tomorrow.toDate()) // Pass Date object if dateFormat expects it
     });
 
     return res.status(201).json({
@@ -771,6 +779,11 @@ export const checkPaymentVNPay = async (req, res) => {
   try {
     const vnpParams = req.query;
     
+    // Import and extend dayjs with timezone plugin immediately before importing VNPay
+    const dayjs = (await import('dayjs')).default;
+    const timezone = (await import('dayjs/plugin/timezone.js')).default;
+    dayjs.extend(timezone);
+    
     // Import VNPay library
     const { VNPay, ignoreLogger } = await import('vnpay');
 
@@ -800,7 +813,7 @@ export const checkPaymentVNPay = async (req, res) => {
     const amount = parseInt(vnpParams['vnp_Amount']) / 100; // Convert from smallest currency unit
     const responseCode = vnpParams['vnp_ResponseCode']; // VNPay response code ('00' for success)
     const bankCode = vnpParams['vnp_BankCode'];
-    const payDate = vnpParams['vnp_PayDate'] ? moment(vnpParams['vnp_PayDate'], 'YYYYMMDDHHmmss').toDate() : new Date();
+    const payDate = vnpParams['vnp_PayDate'] ? dayjs(vnpParams['vnp_PayDate'], 'YYYYMMDDHHmmss').toDate() : new Date(); // Using dayjs
 
     // Check for valid response code from VNPay
     const isPaymentSuccess = responseCode === '00';
