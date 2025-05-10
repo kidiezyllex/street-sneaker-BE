@@ -655,16 +655,9 @@ export const createQrVNPay = async (req, res) => {
     } else if (clientIp.substr(0, 7) === '::ffff:') {
       clientIp = clientIp.substr(7);
     }
+    const { getVNPay } = await import('../utils/vnpay-wrapper.js');
+    const { VNPay, ignoreLogger, ProductCode, VnpLocale, dateFormat } = await getVNPay();
 
-    // Import and extend dayjs with timezone plugin immediately before importing VNPay
-    const dayjs = (await import('dayjs')).default;
-    const timezone = (await import('dayjs/plugin/timezone.js')).default;
-    dayjs.extend(timezone);
-    
-    // Import VNPay library
-    const { VNPay, ignoreLogger, ProductCode, VnpLocale, dateFormat } = await import('vnpay');
-
-    // Create VNPay instance
     const vnpay = new VNPay({
       tmnCode: "LXS5R4EG",
       secureSecret: 'E9ZVT6V5D1XF2APNOJP7UBWU91VHGWG7',
@@ -674,11 +667,9 @@ export const createQrVNPay = async (req, res) => {
       LoggerFn: ignoreLogger
     });
 
-    // Set up expiration date (15 minutes from now)
     const now = dayjs();
     const tomorrow = now.add(15, 'minute');
 
-    // Build payment URL
     const paymentUrl = await vnpay.buildPaymentUrl({
       vnp_Amount: parseInt(amount),
       vnp_IpAddr: clientIp,
@@ -779,13 +770,9 @@ export const checkPaymentVNPay = async (req, res) => {
   try {
     const vnpParams = req.query;
     
-    // Import and extend dayjs with timezone plugin immediately before importing VNPay
-    const dayjs = (await import('dayjs')).default;
-    const timezone = (await import('dayjs/plugin/timezone.js')).default;
-    dayjs.extend(timezone);
-    
-    // Import VNPay library
-    const { VNPay, ignoreLogger } = await import('vnpay');
+    // Use our wrapper instead of direct imports
+    const { getVNPay } = await import('../utils/vnpay-wrapper.js');
+    const { VNPay, ignoreLogger } = await getVNPay();
 
     // Create VNPay instance
     const vnpay = new VNPay({
