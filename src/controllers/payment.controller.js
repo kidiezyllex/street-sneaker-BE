@@ -556,26 +556,86 @@ export const createCODPayment = async (req, res) => {
 };
 
 /**
- * Tạo mã QR thanh toán qua VNPay
- * @route POST /api/vnpay/create-qr
- * @access Public
+ * @swagger
+ * /vnpay/create-qr:
+ *   post:
+ *     summary: Tạo mã QR thanh toán qua VNPay
+ *     tags: [VNPay]
+ *     description: Tạo URL thanh toán VNPay và trả về để redirect hoặc hiển thị QR code
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - amount
+ *               - orderId
+ *             properties:
+ *               amount:
+ *                 type: number
+ *                 description: Số tiền thanh toán (VND)
+ *               orderId:
+ *                 type: string
+ *                 description: ID của đơn hàng cần thanh toán
+ *               returnUrl:
+ *                 type: string
+ *                 description: URL redirect sau khi thanh toán xong
+ *     responses:
+ *       201:
+ *         description: Tạo URL thanh toán thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Tạo mã QR thanh toán thành công
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     paymentUrl:
+ *                       type: string
+ *                       example: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?...
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ *       404:
+ *         description: Không tìm thấy đơn hàng
+ *       500:
+ *         description: Lỗi server
  */
 export const createQrVNPay = async (req, res) => {
   try {
-    const { 
-      amount, 
-      orderInfo, 
-      txnRef, 
-      returnUrl,
-      orderType,
-      locale
-    } = req.body;
+    const { amount, orderId, returnUrl } = req.body;
 
     // Validate input
-    if (!amount || !orderInfo || !txnRef) {
+    if (!amount || !orderId) {
       return res.status(400).json({
         success: false,
-        message: 'Thiếu thông tin thanh toán: amount, orderInfo và txnRef là bắt buộc',
+        message: 'Thiếu thông tin thanh toán: amount và orderId là bắt buộc',
+        data: null
+      });
+    }
+
+    // Validate orderId 
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID đơn hàng không hợp lệ',
+        data: null
+      });
+    }
+
+    // Find the order
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy đơn hàng',
         data: null
       });
     }
@@ -593,30 +653,42 @@ export const createQrVNPay = async (req, res) => {
       clientIp = clientIp.substr(7);
     }
 
-    // Import dynamically to use the most up-to-date file
-    const vnpayHelper = await import('../utils/vnpay-helper.js');
-    
-    // Set up expiration date (default: 15 minutes from now)
-    const now = new Date();
-    const expireDate = new Date(now.getTime() + 15 * 60 * 1000);
+    // Import VNPay library
+    const { VNPay, ignoreLogger, ProductCode, VnpLocale, dateFormat } = await import('vnpay');
 
-    // Configure VNPay parameters
-    const vnpayResponse = vnpayHelper.createQrPayment({
+    // Create VNPay instance
+    const vnpay = new VNPay({
+      tmnCode: "LXS5R4EG",
+      secureSecret: 'E9ZVT6V5D1XF2APNOJP7UBWU91VHGWG7',
+      vnpayHost: 'https://sandbox.vnpayment.vn',
+      testMode: true,
+      hashAlgorithm: 'SHA512',
+      LoggerFn: ignoreLogger
+    });
+
+    // Set up expiration date (15 minutes from now)
+    const now = new Date();
+    const tomorrow = new Date(now.getTime() + 15 * 60 * 1000);
+
+    // Build payment URL
+    const paymentUrl = await vnpay.buildPaymentUrl({
       vnp_Amount: parseInt(amount),
       vnp_IpAddr: clientIp,
-      vnp_TxnRef: txnRef,
-      vnp_OrderInfo: orderInfo,
-      vnp_OrderType: orderType || vnpayHelper.ProductCode.Other,
-      vnp_ReturnUrl: returnUrl || "http://localhost:3008/vnpay/check-payment-vnpay", // Update this to match example
-      vnp_Locale: locale || vnpayHelper.VnpLocale.VN,
-      vnp_CreateDate: vnpayHelper.dateFormat(now),
-      vnp_ExpireDate: vnpayHelper.dateFormat(expireDate)
+      vnp_TxnRef: order.code,
+      vnp_OrderInfo: `Thanh toan don hang ${order.code}`,
+      vnp_OrderType: ProductCode.Other,
+      vnp_ReturnUrl: returnUrl || `${req.protocol}://${req.get('host')}/api/vnpay/check-payment-vnpay`,
+      vnp_Locale: VnpLocale.VN,
+      vnp_CreateDate: dateFormat(now),
+      vnp_ExpireDate: dateFormat(tomorrow)
     });
 
     return res.status(201).json({
       success: true,
       message: 'Tạo mã QR thanh toán thành công',
-      data: vnpayResponse.data
+      data: {
+        paymentUrl
+      }
     });
   } catch (error) {
     console.error('Lỗi khi tạo mã QR VNPay:', error);
@@ -629,19 +701,89 @@ export const createQrVNPay = async (req, res) => {
 };
 
 /**
- * Kiểm tra thanh toán VNPay
- * @route GET /api/vnpay/check-payment-vnpay
- * @access Public
+ * @swagger
+ * /vnpay/check-payment-vnpay:
+ *   get:
+ *     summary: Xử lý kết quả thanh toán từ VNPay
+ *     tags: [VNPay]
+ *     description: Nhận và xử lý callback từ VNPay sau khi thanh toán xong, cập nhật trạng thái đơn hàng
+ *     parameters:
+ *       - in: query
+ *         name: vnp_Amount
+ *         schema:
+ *           type: string
+ *         description: Số tiền thanh toán từ VNPay
+ *       - in: query
+ *         name: vnp_TxnRef
+ *         schema:
+ *           type: string
+ *         description: Mã đơn hàng
+ *       - in: query
+ *         name: vnp_ResponseCode
+ *         schema:
+ *           type: string
+ *         description: Mã phản hồi từ VNPay ('00' là thành công)
+ *       - in: query
+ *         name: vnp_TransactionNo
+ *         schema:
+ *           type: string
+ *         description: Mã giao dịch từ VNPay
+ *       - in: query
+ *         name: vnp_SecureHash
+ *         schema:
+ *           type: string
+ *         description: Chữ ký xác thực từ VNPay
+ *     responses:
+ *       200:
+ *         description: Xử lý callback thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Thanh toán thành công
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     txnRef:
+ *                       type: string
+ *                       example: DH2306000001
+ *                     transactionNo:
+ *                       type: string
+ *                       example: 13876502
+ *                     amount:
+ *                       type: number
+ *                       example: 500000
+ *                     payDate:
+ *                       type: string
+ *                       example: 2023-06-01T14:30:00.000Z
+ *       400:
+ *         description: Chữ ký không hợp lệ hoặc thanh toán bị từ chối
+ *       500:
+ *         description: Lỗi server
  */
 export const checkPaymentVNPay = async (req, res) => {
   try {
     const vnpParams = req.query;
     
-    // Import dynamically to use the most up-to-date file
-    const vnpayHelper = await import('../utils/vnpay-helper.js');
+    // Import VNPay library
+    const { VNPay, ignoreLogger } = await import('vnpay');
+
+    // Create VNPay instance
+    const vnpay = new VNPay({
+      tmnCode: "LXS5R4EG",
+      secureSecret: 'E9ZVT6V5D1XF2APNOJP7UBWU91VHGWG7',
+      vnpayHost: 'https://sandbox.vnpayment.vn',
+      testMode: true
+    });
     
     // Verify VNPay signature
-    const isValidSignature = vnpayHelper.verifyPaymentReturn(vnpParams);
+    const isValidSignature = vnpay.verifyReturnUrl(vnpParams);
     
     if (!isValidSignature) {
       console.error('VNPay Return: Invalid signature based on internal verification.');
@@ -663,10 +805,7 @@ export const checkPaymentVNPay = async (req, res) => {
     // Check for valid response code from VNPay
     const isPaymentSuccess = responseCode === '00';
 
-    // TODO: Update order status and create payment record in the database
-    // This section would depend on your specific data models and business logic
-    /*
-    // Example code (implement according to your models)
+    // Find the order by code
     const order = await Order.findOne({ code: txnRef });
     if (order) {
       // Create payment record
@@ -675,6 +814,7 @@ export const checkPaymentVNPay = async (req, res) => {
         amount,
         method: 'VNPAY',
         status: isPaymentSuccess ? 'COMPLETED' : 'FAILED',
+        note: isPaymentSuccess ? `Thanh toán VNPay thành công, mã giao dịch: ${transactionNo}` : `Thanh toán VNPay thất bại, mã phản hồi: ${responseCode}`,
         vnpayInfo: {
           transactionNo,
           payDate,
@@ -687,11 +827,18 @@ export const checkPaymentVNPay = async (req, res) => {
       // Update order if payment successful
       if (isPaymentSuccess) {
         order.paymentStatus = 'PAID';
-        order.orderStatus = 'CHO_GIAO_HANG';
+        order.paymentMethod = 'VNPAY';
+        
+        // Update order status to shipping if currently pending
+        if (order.orderStatus === 'CHO_XAC_NHAN') {
+          order.orderStatus = 'CHO_GIAO_HANG';
+        }
+        
         await order.save();
       }
+    } else {
+      console.warn(`Order not found with code: ${txnRef}`);
     }
-    */
 
     // Return payment result to client
     return res.status(200).json({
@@ -703,7 +850,8 @@ export const checkPaymentVNPay = async (req, res) => {
         amount,
         responseCode,
         bankCode,
-        payDate: payDate.toISOString()
+        payDate: payDate.toISOString(),
+        orderId: order ? order._id : null
       }
     });
   } catch (error) {

@@ -65,6 +65,9 @@ importers:
       uuid:
         specifier: ^9.0.1
         version: 9.0.1
+      vnpay:
+        specifier: ^2.2.0
+        version: 2.2.0
     devDependencies:
       '@eslint/js':
         specifier: ^9.24.0
@@ -973,6 +976,9 @@ packages:
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
     engines: {node: '>= 8'}
+
+  dayjs@1.11.13:
+    resolution: {integrity: sha512-oaMBel6gjolK862uaPQOVTA7q3TZhuSvuMQAAglQDOWYO9A91IrAOUJEyKVlqJlHE0vq5p5UXxzdPfMH/x6xNg==}
 
   debug@2.6.9:
     resolution: {integrity: sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA==}
@@ -1932,6 +1938,9 @@ packages:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
     engines: {node: '>= 0.8'}
 
+  vnpay@2.2.0:
+    resolution: {integrity: sha512-3cqjAD7dHBRNjOeIbfZibL4JzwQRzjDERMy33T1pRJdJHtfB0fZskWPg63IoXnpEo+wduwTyaqyMH10wN4uAhQ==}
+
   webidl-conversions@3.0.1:
     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
 
@@ -2727,6 +2736,8 @@ snapshots:
       path-key: 3.1.1
       shebang-command: 2.0.0
       which: 2.0.2
+
+  dayjs@1.11.13: {}
 
   debug@2.6.9:
     dependencies:
@@ -3764,6 +3775,10 @@ snapshots:
   validator@13.15.0: {}
 
   vary@1.1.2: {}
+
+  vnpay@2.2.0:
+    dependencies:
+      dayjs: 1.11.13
 
   webidl-conversions@3.0.1: {}
 
