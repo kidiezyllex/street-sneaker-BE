@@ -2,7 +2,10 @@ services:
   - type: web
     name: street-sneaker-BE
     env: node
-    buildCommand: pnpm install --no-frozen-lockfile && node fix-vnpay.js && pnpm run build
+    buildCommand: |
+      pnpm install --no-frozen-lockfile
+      node fix-vnpay.js
+      pnpm run build
     startCommand: pnpm run start
     envVars:
       - key: NODE_VERSION

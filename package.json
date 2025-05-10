@@ -6,16 +6,14 @@
   "scripts": {
     "dev": "tsx src/index.ts",
     "build": "tsc",
-    "prestart": "node fix-vnpay.js",
     "start": "NODE_ENV=production node dist/index.js",
     "lint": "eslint src/",
     "db:push": "drizzle-kit push",
-    "postinstall": "pnpm install --no-frozen-lockfile && npm rebuild bcrypt --update-binary && node fix-vnpay.js",
-    "prepare": "npm run build"
+    "postinstall": "npm rebuild bcrypt --update-binary"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
-    "cloudinary": "^2.6.0",
+    "cloudinary": "^2.2.0",
     "compression": "^1.8.0",
     "cors": "^2.8.5",
     "dayjs": "^1.11.13",
@@ -59,6 +57,5 @@
     "typescript": "5.6.3",
     "typescript-eslint": "^8.29.1"
   },
-  "pnpm": {
-  }
+  "pnpm": {}
 }
