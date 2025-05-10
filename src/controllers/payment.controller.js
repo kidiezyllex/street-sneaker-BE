@@ -553,4 +553,165 @@ export const createCODPayment = async (req, res) => {
       error: error.message
     });
   }
+};
+
+/**
+ * Tạo mã QR thanh toán qua VNPay
+ * @route POST /api/create-qr
+ * @access Public
+ */
+export const createQrVNPay = async (req, res) => {
+  try {
+    const { 
+      amount, 
+      orderInfo, 
+      txnRef, 
+      returnUrl,
+      orderType,
+      locale
+    } = req.body;
+
+    // Validate input
+    if (!amount || !orderInfo || !txnRef) {
+      return res.status(400).json({
+        success: false,
+        message: 'Thiếu thông tin thanh toán: amount, orderInfo và txnRef là bắt buộc',
+        data: null
+      });
+    }
+
+    // Get client IP address
+    let clientIp = req.ip || req.headers['x-forwarded-for'];
+    if (clientIp) {
+      const ips = clientIp.split(',');
+      clientIp = ips[0].trim();
+    }
+
+    if (!clientIp || clientIp === '::1') {
+      clientIp = '127.0.0.1';
+    } else if (clientIp.substr(0, 7) === '::ffff:') {
+      clientIp = clientIp.substr(7);
+    }
+
+    // Import dynamically to use the most up-to-date file
+    const vnpayHelper = await import('../utils/vnpay-helper.js');
+    
+    // Set up expiration date (default: 15 minutes from now)
+    const now = new Date();
+    const expireDate = new Date(now.getTime() + 15 * 60 * 1000);
+
+    // Configure VNPay parameters
+    const vnpayResponse = await vnpayHelper.createQrPayment({
+      vnp_Amount: amount,
+      vnp_IpAddr: clientIp,
+      vnp_TxnRef: txnRef,
+      vnp_OrderInfo: orderInfo,
+      vnp_OrderType: orderType || vnpayHelper.ProductCode.Other,
+      vnp_ReturnUrl: returnUrl,
+      vnp_Locale: locale || vnpayHelper.VnpLocale.VN,
+      vnp_CreateDate: vnpayHelper.dateFormat(now),
+      vnp_ExpireDate: vnpayHelper.dateFormat(expireDate)
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: 'Tạo mã QR thanh toán thành công',
+      data: vnpayResponse.data
+    });
+  } catch (error) {
+    console.error('Lỗi khi tạo mã QR VNPay:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Đã xảy ra lỗi khi tạo mã QR thanh toán',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Kiểm tra thanh toán VNPay
+ * @route GET /api/check-payment-vnpay
+ * @access Public
+ */
+export const checkPaymentVNPay = async (req, res) => {
+  try {
+    const vnpParams = req.query;
+    
+    // Import dynamically to use the most up-to-date file
+    const vnpayHelper = await import('../utils/vnpay-helper.js');
+    
+    // Verify VNPay signature
+    const isValidSignature = vnpayHelper.verifyPaymentReturn(vnpParams);
+    
+    if (!isValidSignature) {
+      console.error('VNPay Return: Invalid signature based on internal verification.');
+      return res.status(400).json({
+        success: false,
+        message: 'Chữ ký không hợp lệ, giao dịch có thể đã bị thay đổi',
+        data: null
+      });
+    }
+
+    // Extract information from VNPay response
+    const txnRef = vnpParams['vnp_TxnRef']; // Order reference
+    const transactionNo = vnpParams['vnp_TransactionNo']; // VNPay transaction number
+    const amount = parseInt(vnpParams['vnp_Amount']) / 100; // Convert from smallest currency unit
+    const responseCode = vnpParams['vnp_ResponseCode']; // VNPay response code ('00' for success)
+    const bankCode = vnpParams['vnp_BankCode'];
+    const payDate = vnpParams['vnp_PayDate'] ? moment(vnpParams['vnp_PayDate'], 'YYYYMMDDHHmmss').toDate() : new Date();
+
+    // Check for valid response code from VNPay
+    const isPaymentSuccess = responseCode === '00';
+
+    // TODO: Update order status and create payment record in the database
+    // This section would depend on your specific data models and business logic
+    /*
+    // Example code (implement according to your models)
+    const order = await Order.findOne({ code: txnRef });
+    if (order) {
+      // Create payment record
+      const payment = new Payment({
+        order: order._id,
+        amount,
+        method: 'VNPAY',
+        status: isPaymentSuccess ? 'COMPLETED' : 'FAILED',
+        vnpayInfo: {
+          transactionNo,
+          payDate,
+          bankCode,
+          responseCode
+        }
+      });
+      await payment.save();
+
+      // Update order if payment successful
+      if (isPaymentSuccess) {
+        order.paymentStatus = 'PAID';
+        order.orderStatus = 'CHO_GIAO_HANG';
+        await order.save();
+      }
+    }
+    */
+
+    // Return payment result to client
+    return res.status(200).json({
+      success: isPaymentSuccess,
+      message: isPaymentSuccess ? 'Thanh toán thành công' : 'Thanh toán thất bại',
+      data: {
+        txnRef,
+        transactionNo,
+        amount,
+        responseCode,
+        bankCode,
+        payDate: payDate.toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('Lỗi khi xử lý callback VNPay:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Đã xảy ra lỗi khi xử lý callback thanh toán',
+      error: error.message
+    });
+  }
 }; 

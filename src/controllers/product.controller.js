@@ -9,7 +9,6 @@ import { Brand, Category, Material, Color, Size } from '../models/attribute.mode
  */
 export const createProduct = async (req, res) => {
   try {
-    console.log('Nhận yêu cầu tạo sản phẩm:', req.body);
     const { 
       name, 
       brand, 

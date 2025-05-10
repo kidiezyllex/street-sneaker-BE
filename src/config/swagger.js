@@ -43,6 +43,10 @@ const options = {
         name: 'Statistics',
         description: 'Các API liên quan đến thống kê hệ thống',
       },
+      {
+        name: 'VNPay',
+        description: 'Các API liên quan đến thanh toán qua VNPay',
+      },
     ],
   },
   // Paths to the API docs
@@ -53,6 +57,7 @@ const options = {
     './src/models/*.js',
     './src/controllers/*.ts',
     './src/controllers/*.js',
+    './src/swagger-docs/*.js'
   ],
 };
 
@@ -84,8 +89,6 @@ export const setupSwagger = (app) => {
     res.setHeader('Content-Type', 'application/json');
     res.send(specs);
   });
-
-  console.log('Swagger documentation initialized at /api-docs');
 };
 
 export default setupSwagger; 

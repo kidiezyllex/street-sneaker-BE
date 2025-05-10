@@ -11,18 +11,13 @@ dotenv.config();
 export const authenticate = async (req, res, next) => {
   try {
     let token;
-    
-    console.log('Headers:', req.headers);
-    
     // Lấy token từ Authorization header
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
       token = req.headers.authorization.split(' ')[1];
-      console.log('Token được trích xuất:', token);
     }
     
     // Kiểm tra token tồn tại
     if (!token) {
-      console.log('Không tìm thấy token trong Authorization header');
       return res.status(401).json({
         status: false,
         message: 'Không có token, từ chối truy cập',
@@ -35,13 +30,11 @@ export const authenticate = async (req, res, next) => {
     // Xác thực token
     try {
       const decoded = jwt.verify(token, config.jwtSecret);
-      console.log('Token được giải mã thành công:', decoded);
     
       // Tìm người dùng từ token
       const account = await Account.findById(decoded.id).select('-password');
       
       if (!account) {
-        console.log('Không tìm thấy tài khoản với ID:', decoded.id);
         return res.status(401).json({
           status: false,
           message: 'Tài khoản không tồn tại',
@@ -50,9 +43,6 @@ export const authenticate = async (req, res, next) => {
           timestamp: new Date().toISOString()
         });
       }
-      
-      console.log('Xác thực thành công, tài khoản:', account);
-      
       // Gán thông tin người dùng vào request
       req.account = account;
       next();

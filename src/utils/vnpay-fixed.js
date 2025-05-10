@@ -42,9 +42,6 @@ export function createPayment(orderId, amount, orderInfo, clientIp, orderCode) {
       throw new Error('Thiếu tham số bắt buộc (bao gồm orderCode)');
     }
 
-    console.log('=== CREATING VNPAY PAYMENT ===');
-    console.log('Input params:', { orderId, amount, orderInfo, clientIp, orderCode });
-
     // Lấy thời gian hiện tại
     const createDate = moment().format('YYYYMMDDHHmmss');
     
@@ -67,27 +64,20 @@ export function createPayment(orderId, amount, orderInfo, clientIp, orderCode) {
       vnp_CreateDate: createDate,
     };
     
-    console.log('Raw params:', params);
-    
     // Sắp xếp tham số theo thứ tự ABC
     const sortedParams = sortObject(params);
-    console.log('Sorted params:', sortedParams);
     
     // Tạo chuỗi tham số để ký
     const signData = querystring.stringify(sortedParams, { encode: false });
-    console.log('Sign data (raw string):', signData);
     
     // Tạo chữ ký
     const hmac = crypto.createHmac('sha512', VNP_HASH_SECRET);
     const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
-    console.log('Generated signature:', signed);
-    
     // Thêm chữ ký vào tham số
     sortedParams.vnp_SecureHash = signed;
     
     // Tạo URL hoàn chỉnh
     const paymentUrl = `${VNP_URL}?${querystring.stringify(sortedParams, { encode: true })}`;
-    console.log('Final payment URL:', paymentUrl);
     
     return paymentUrl;
   } catch (error) {
@@ -103,9 +93,6 @@ export function createPayment(orderId, amount, orderInfo, clientIp, orderCode) {
  */
 export function verifyPayment(vnpParams) {
   try {
-    console.log('=== VERIFYING VNPAY PAYMENT ===');
-    console.log('Callback params:', vnpParams);
-    
     // Lấy chữ ký từ request
     const secureHash = vnpParams.vnp_SecureHash;
     
@@ -118,22 +105,14 @@ export function verifyPayment(vnpParams) {
     
     // Sắp xếp tham số theo thứ tự ABC
     const sortedParams = sortObject(params);
-    console.log('Sorted params for verification:', sortedParams);
-    
     // Tạo chuỗi tham số để kiểm tra chữ ký
     const signData = querystring.stringify(sortedParams, { encode: false });
-    console.log('Sign data for verification:', signData);
     
     // Tạo chữ ký để so sánh
     const hmac = crypto.createHmac('sha512', VNP_HASH_SECRET);
     const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
-    console.log('Generated signature:', signed);
-    console.log('Original signature:', secureHash);
-    
     // So sánh chữ ký
     const isValid = secureHash === signed;
-    console.log('Signature is valid:', isValid);
-    
     return isValid;
   } catch (error) {
     console.error('Error verifying VNPAY payment:', error);
