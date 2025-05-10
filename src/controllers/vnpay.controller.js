@@ -1,4 +1,4 @@
-import { VNPay, dateFormat, ProductCode, VnpLocale } from 'vnpay';
+import vnpay, { dateFormat, ProductCode, VnpLocale } from '../utils/vnpay-fix.js';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -19,7 +19,7 @@ export const createQR = async (req, res) => {
     }
 
     // Initialize VNPay instance
-    const vnpay = new VNPay({
+    const vnpay = new vnpay.VNPay({
       tmnCode: "LXS5R4EG",
       secureSecret: 'E9ZVT6V5D1XF2APNOJP7UBWU91VHGWG7',
       vnpayHost: 'https://sandbox.vnpayment.vn',
@@ -73,7 +73,7 @@ export const checkPayment = async (req, res) => {
     const vnpayParams = req.query;
     
     // Initialize VNPay instance
-    const vnpay = new VNPay({
+    const vnpay = new vnpay.VNPay({
       tmnCode: "LXS5R4EG",
       secureSecret: 'E9ZVT6V5D1XF2APNOJP7UBWU91VHGWG7',
       vnpayHost: 'https://sandbox.vnpayment.vn',
