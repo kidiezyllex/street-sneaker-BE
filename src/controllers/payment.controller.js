@@ -601,13 +601,13 @@ export const createQrVNPay = async (req, res) => {
     const expireDate = new Date(now.getTime() + 15 * 60 * 1000);
 
     // Configure VNPay parameters
-    const vnpayResponse = await vnpayHelper.createQrPayment({
-      vnp_Amount: amount,
+    const vnpayResponse = vnpayHelper.createQrPayment({
+      vnp_Amount: parseInt(amount),
       vnp_IpAddr: clientIp,
       vnp_TxnRef: txnRef,
       vnp_OrderInfo: orderInfo,
       vnp_OrderType: orderType || vnpayHelper.ProductCode.Other,
-      vnp_ReturnUrl: returnUrl,
+      vnp_ReturnUrl: returnUrl || "http://localhost:3008/vnpay/check-payment-vnpay", // Update this to match example
       vnp_Locale: locale || vnpayHelper.VnpLocale.VN,
       vnp_CreateDate: vnpayHelper.dateFormat(now),
       vnp_ExpireDate: vnpayHelper.dateFormat(expireDate)

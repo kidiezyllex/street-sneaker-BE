@@ -4,10 +4,10 @@ import moment from 'moment';
 
 // VNPay configuration
 const config = {
-  vnp_TmnCode: "LXS5R4EG",
-  vnp_HashSecret: "E9ZVT6V5D1XF2APNOJP7UBWU91VHGWG7",
+  vnp_TmnCode: "OZE53A0G",
+  vnp_HashSecret: "U89C185M60347VMKQOUWBJSGOXIVOSBA",
   vnp_Url: "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html",
-  vnp_ReturnUrl: "http://localhost:3008/api/vnpay/check-payment-vnpay" // This will be our callback URL
+  vnp_ReturnUrl: "http://localhost:3008/api/vnpay/check-payment-vnpay"
 };
 
 /**
@@ -23,6 +23,16 @@ function sortObject(obj) {
   }
   return sorted;
 }
+
+/**
+ * Format date according to VNPay requirements (YYYYMMDDHHmmss)
+ * 
+ * @param {Date} date Date to format
+ * @returns {String} Formatted date string
+ */
+export const dateFormat = (date) => {
+  return moment(date).format('YYYYMMDDHHmmss');
+};
 
 /**
  * Create QR code payment URL for VNPay
@@ -59,7 +69,7 @@ export const createQrPayment = (params) => {
       vnp_TxnRef: vnp_TxnRef,
       vnp_OrderInfo: vnp_OrderInfo,
       vnp_OrderType: vnp_OrderType,
-      vnp_Amount: vnp_Amount * 100, // Convert to smallest currency unit
+      vnp_Amount: parseInt(vnp_Amount) * 100, // Convert to smallest currency unit
       vnp_ReturnUrl: vnp_ReturnUrl,
       vnp_IpAddr: vnp_IpAddr,
       vnp_CreateDate: vnp_CreateDate
@@ -73,7 +83,7 @@ export const createQrPayment = (params) => {
     // Sort parameters alphabetically
     vnp_Params = sortObject(vnp_Params);
     
-    // Create signature
+    // Create signature with SHA512 (changed from previous implementation)
     const signData = querystring.stringify(vnp_Params, { encode: false });
     const hmac = crypto.createHmac('sha512', secretKey);
     const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
@@ -81,8 +91,8 @@ export const createQrPayment = (params) => {
     // Add signature to request
     vnp_Params['vnp_SecureHash'] = signed;
     
-    // Create complete URL
-    const paymentUrl = vnpUrl + '?' + querystring.stringify(vnp_Params, { encode: false });
+    // Create complete URL - using 'encode: true' to properly encode the URL parameters
+    const paymentUrl = vnpUrl + '?' + querystring.stringify(vnp_Params, { encode: true });
     
     return {
       code: '00',
@@ -131,16 +141,6 @@ export const verifyPaymentReturn = (vnpParams) => {
     console.error('Error verifying VNPay callback:', error);
     return false;
   }
-};
-
-/**
- * Format date according to VNPay requirements (YYYYMMDDHHmmss)
- * 
- * @param {Date} date Date to format
- * @returns {String} Formatted date string
- */
-export const dateFormat = (date) => {
-  return moment(date).format('YYYYMMDDHHmmss');
 };
 
 // Export constants for use in other files
