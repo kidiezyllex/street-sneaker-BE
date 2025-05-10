@@ -44,8 +44,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     app.use("/api/products", productRoutes);
     app.use("/api/promotions", promotionRoutes);
     app.use("/api/returns", returnRoutes);
-    app.post("/vnpay/create-qr", createQrVNPay);
-    app.get("/vnpay/check-payment-vnpay", checkPaymentVNPay);
+    app.post("/api/vnpay/create-qr", createQrVNPay);
+    app.get("/api/vnpay/check-payment-vnpay", checkPaymentVNPay);
     
     app.get("/api/health", (req: Request, res: Response) => {
       res.status(200).json({ 

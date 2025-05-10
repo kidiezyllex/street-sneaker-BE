@@ -557,7 +557,7 @@ export const createCODPayment = async (req, res) => {
 
 /**
  * Tạo mã QR thanh toán qua VNPay
- * @route POST /api/create-qr
+ * @route POST /api/vnpay/create-qr
  * @access Public
  */
 export const createQrVNPay = async (req, res) => {
@@ -630,7 +630,7 @@ export const createQrVNPay = async (req, res) => {
 
 /**
  * Kiểm tra thanh toán VNPay
- * @route GET /api/check-payment-vnpay
+ * @route GET /api/vnpay/check-payment-vnpay
  * @access Public
  */
 export const checkPaymentVNPay = async (req, res) => {

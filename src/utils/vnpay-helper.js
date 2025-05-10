@@ -7,7 +7,7 @@ const config = {
   vnp_TmnCode: "LXS5R4EG",
   vnp_HashSecret: "E9ZVT6V5D1XF2APNOJP7UBWU91VHGWG7",
   vnp_Url: "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html",
-  vnp_ReturnUrl: "http://localhost:3008/api/check-payment-vnpay" // This will be our callback URL
+  vnp_ReturnUrl: "http://localhost:3008/api/vnpay/check-payment-vnpay" // This will be our callback URL
 };
 
 /**
