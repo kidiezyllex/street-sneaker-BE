@@ -5,7 +5,8 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // Database connection string from environment variables
-export const mongoURI = process.env.MONGODB_URI;
+// export const mongoURI = process.env.MONGODB_URI;
+export const mongoURI = "mongodb+srv://kidiezyllex:kidiezyllex.1111@cluster0.dm3rgls.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
 // JWT configuration
 export const jwtSecret = process.env.JWT_SECRET;

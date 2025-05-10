@@ -16,7 +16,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/notifications:
+ * /notifications:
  *   post:
  *     summary: Tạo thông báo mới
  *     tags: [Notifications]
@@ -65,7 +65,7 @@ router.post('/', authenticate, authorizeAdmin, createNotification);
 
 /**
  * @swagger
- * /api/notifications:
+ * /notifications:
  *   get:
  *     summary: Lấy danh sách thông báo
  *     tags: [Notifications]
@@ -109,7 +109,7 @@ router.get('/', authenticate, authorizeAdmin, getNotifications);
 
 /**
  * @swagger
- * /api/notifications/{id}:
+ * /notifications/{id}:
  *   get:
  *     summary: Lấy chi tiết thông báo
  *     tags: [Notifications]
@@ -137,7 +137,7 @@ router.get('/:id', authenticate, authorizeAdmin, getNotificationById);
 
 /**
  * @swagger
- * /api/notifications/{id}:
+ * /notifications/{id}:
  *   put:
  *     summary: Cập nhật thông báo
  *     tags: [Notifications]
@@ -183,7 +183,7 @@ router.put('/:id', authenticate, authorizeAdmin, updateNotification);
 
 /**
  * @swagger
- * /api/notifications/{id}:
+ * /notifications/{id}:
  *   delete:
  *     summary: Xóa thông báo
  *     tags: [Notifications]
@@ -211,7 +211,7 @@ router.delete('/:id', authenticate, authorizeAdmin, deleteNotification);
 
 /**
  * @swagger
- * /api/notifications/{id}/send:
+ * /notifications/{id}/send:
  *   post:
  *     summary: Gửi thông báo
  *     tags: [Notifications]
@@ -239,7 +239,7 @@ router.post('/:id/send', authenticate, authorizeAdmin, sendNotification);
 
 /**
  * @swagger
- * /api/notifications/user:
+ * /notifications/user:
  *   get:
  *     summary: Lấy thông báo của người dùng đăng nhập
  *     tags: [Notifications]
@@ -268,7 +268,7 @@ router.get('/user', authenticate, getUserNotifications);
 
 /**
  * @swagger
- * /api/notifications/send-all:
+ * /notifications/send-all:
  *   post:
  *     summary: Gửi thông báo đến tất cả khách hàng
  *     tags: [Notifications]

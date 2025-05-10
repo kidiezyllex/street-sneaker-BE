@@ -17,8 +17,6 @@ import voucherRoutes from './routes/voucher.routes.js';
 import productRoutes from './routes/product.routes.js';
 import promotionRoutes from './routes/promotion.routes.js';
 import returnRoutes from './routes/return.routes.js';
-
-// Import VNPay controllers
 import { createQrVNPay, checkPaymentVNPay } from './controllers/payment.controller.js';
 
 const router = Router();
@@ -35,7 +33,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     });
     
-    // Regular routes
     app.use("/api/auth", authRoutes);
     app.use("/api/upload", uploadRoutes);
     app.use("/api/accounts", accountRoutes);
@@ -47,10 +44,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     app.use("/api/products", productRoutes);
     app.use("/api/promotions", promotionRoutes);
     app.use("/api/returns", returnRoutes);
-    
-    // VNPay direct routes
-    app.post("/api/create-qr", createQrVNPay);
-    app.get("/api/check-payment-vnpay", checkPaymentVNPay);
+    app.post("/vnpay/create-qr", createQrVNPay);
+    app.get("/vnpay/check-payment-vnpay", checkPaymentVNPay);
     
     app.get("/api/health", (req: Request, res: Response) => {
       res.status(200).json({ 

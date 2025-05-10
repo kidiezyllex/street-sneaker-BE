@@ -16,7 +16,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/returns:
+ * /returns:
  *   post:
  *     summary: Tạo đơn trả hàng mới
  *     tags: [Returns]
@@ -86,7 +86,7 @@ router.post('/', authenticate, authorizeAdmin, createReturn);
 
 /**
  * @swagger
- * /api/returns:
+ * /returns:
  *   get:
  *     summary: Lấy danh sách đơn trả hàng
  *     tags: [Returns]
@@ -125,7 +125,7 @@ router.get('/', authenticate, authorizeAdmin, getReturns);
 
 /**
  * @swagger
- * /api/returns/search:
+ * /returns/search:
  *   get:
  *     summary: Tìm kiếm đơn trả hàng theo mã QR hoặc mã đơn hàng
  *     tags: [Returns]
@@ -152,7 +152,7 @@ router.get('/search', authenticate, authorizeAdmin, searchReturn);
 
 /**
  * @swagger
- * /api/returns/stats:
+ * /returns/stats:
  *   get:
  *     summary: Lấy thống kê đơn trả hàng
  *     tags: [Returns]
@@ -181,7 +181,7 @@ router.get('/stats', authenticate, authorizeAdmin, getReturnStats);
 
 /**
  * @swagger
- * /api/returns/{id}:
+ * /returns/{id}:
  *   get:
  *     summary: Lấy chi tiết đơn trả hàng
  *     tags: [Returns]
@@ -210,7 +210,7 @@ router.get('/:id', authenticate, authorizeAdmin, getReturnById);
 
 /**
  * @swagger
- * /api/returns/{id}:
+ * /returns/{id}:
  *   put:
  *     summary: Cập nhật thông tin đơn trả hàng
  *     tags: [Returns]
@@ -270,7 +270,7 @@ router.put('/:id', authenticate, authorizeAdmin, updateReturn);
 
 /**
  * @swagger
- * /api/returns/{id}/status:
+ * /returns/{id}/status:
  *   put:
  *     summary: Cập nhật trạng thái đơn trả hàng
  *     tags: [Returns]
@@ -312,7 +312,7 @@ router.put('/:id/status', authenticate, authorizeAdmin, updateReturnStatus);
 
 /**
  * @swagger
- * /api/returns/{id}:
+ * /returns/{id}:
  *   delete:
  *     summary: Xóa đơn trả hàng
  *     tags: [Returns]

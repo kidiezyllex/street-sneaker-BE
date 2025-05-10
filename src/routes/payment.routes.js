@@ -24,7 +24,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/payments:
+ * /payments:
  *   post:
  *     summary: Tạo thanh toán mới cho đơn hàng
  *     tags: [Payments]
@@ -82,7 +82,7 @@ router.post('/', authenticate, authorizeStaffOrAdmin, createPayment);
 
 /**
  * @swagger
- * /api/payments:
+ * /payments:
  *   get:
  *     summary: Lấy danh sách thanh toán (Admin)
  *     tags: [Payments]
@@ -144,7 +144,7 @@ router.get('/', authenticate, authorizeAdmin, getPayments);
 
 /**
  * @swagger
- * /api/orders/{orderId}/payments:
+ * /orders/{orderId}/payments:
  *   get:
  *     summary: Lấy danh sách thanh toán của một đơn hàng cụ thể
  *     tags: [Payments, Orders] # Có thể thêm tag Orders
@@ -173,10 +173,9 @@ router.get('/', authenticate, authorizeAdmin, getPayments);
  */
 router.get('/orders/:orderId/payments', authenticate, getPaymentsByOrderId);
 
-
 /**
  * @swagger
- * /api/payments/{id}:
+ * /payments/{id}:
  *   get:
  *     summary: Lấy chi tiết một thanh toán (Admin)
  *     tags: [Payments]
@@ -207,7 +206,7 @@ router.get('/:id', authenticate, authorizeAdmin, getPaymentById);
 
 /**
  * @swagger
- * /api/payments/{id}:
+ * /payments/{id}:
  *   put:
  *     summary: Cập nhật trạng thái thanh toán (Admin)
  *     tags: [Payments]
@@ -254,7 +253,7 @@ router.put('/:id', authenticate, authorizeAdmin, updatePaymentStatus);
 
 /**
  * @swagger
- * /api/payments/{id}:
+ * /payments/{id}:
  *   delete:
  *     summary: Xóa một thanh toán (Admin - Thận trọng!)
  *     tags: [Payments]
@@ -285,7 +284,7 @@ router.delete('/:id', authenticate, authorizeAdmin, deletePayment);
 
 /**
  * @swagger
- * /api/payments/create-vnpay-url:
+ * /payments/create-vnpay-url:
  *   post:
  *     summary: Tạo URL thanh toán VNPay
  *     tags: [Payments]
@@ -320,7 +319,7 @@ router.post('/create-vnpay-url', authenticate, createVNPayPaymentUrl);
 
 /**
  * @swagger
- * /api/payments/vnpay-return:
+ * /payments/vnpay-return:
  *   get:
  *     summary: Xử lý callback từ VNPay
  *     tags: [Payments]
@@ -344,7 +343,7 @@ router.get('/vnpay-return', handleVNPayReturn);
 
 /**
  * @swagger
- * /api/payments/cod:
+ * /payments/cod:
  *   post:
  *     summary: Tạo thanh toán COD
  *     tags: [Payments]

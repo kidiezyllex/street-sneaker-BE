@@ -16,7 +16,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/statistics:
+ * /statistics:
  *   get:
  *     summary: Lấy danh sách thống kê
  *     tags: [Statistics]
@@ -60,7 +60,7 @@ router.get('/', authenticate, authorizeAdmin, getStatistics);
 
 /**
  * @swagger
- * /api/statistics/{id}:
+ * /statistics/{id}:
  *   get:
  *     summary: Lấy chi tiết thống kê
  *     tags: [Statistics]
@@ -88,7 +88,7 @@ router.get('/:id', authenticate, authorizeAdmin, getStatisticById);
 
 /**
  * @swagger
- * /api/statistics:
+ * /statistics:
  *   post:
  *     summary: Tạo thống kê mới
  *     tags: [Statistics]
@@ -159,7 +159,7 @@ router.post('/', authenticate, authorizeAdmin, createStatistic);
 
 /**
  * @swagger
- * /api/statistics/{id}:
+ * /statistics/{id}:
  *   put:
  *     summary: Cập nhật thống kê
  *     tags: [Statistics]
@@ -229,7 +229,7 @@ router.put('/:id', authenticate, authorizeAdmin, updateStatistic);
 
 /**
  * @swagger
- * /api/statistics/{id}:
+ * /statistics/{id}:
  *   delete:
  *     summary: Xóa thống kê
  *     tags: [Statistics]
@@ -257,7 +257,7 @@ router.delete('/:id', authenticate, authorizeAdmin, deleteStatistic);
 
 /**
  * @swagger
- * /api/statistics/revenue:
+ * /statistics/revenue:
  *   get:
  *     summary: Lấy báo cáo doanh thu
  *     tags: [Statistics]
@@ -296,7 +296,7 @@ router.get('/revenue', authenticate, authorizeAdmin, getRevenueReport);
 
 /**
  * @swagger
- * /api/statistics/top-products:
+ * /statistics/top-products:
  *   get:
  *     summary: Lấy báo cáo sản phẩm bán chạy
  *     tags: [Statistics]
@@ -334,7 +334,7 @@ router.get('/top-products', authenticate, authorizeAdmin, getTopProducts);
 
 /**
  * @swagger
- * /api/statistics/generate-daily:
+ * /statistics/generate-daily:
  *   post:
  *     summary: Tạo thống kê theo ngày
  *     tags: [Statistics]

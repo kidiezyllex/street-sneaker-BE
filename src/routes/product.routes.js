@@ -18,7 +18,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/products:
+ * /products:
  *   post:
  *     summary: Tạo sản phẩm mới
  *     tags: [Products]
@@ -82,7 +82,7 @@ router.post('/', authenticate, authorizeAdmin, createProduct);
 
 /**
  * @swagger
- * /api/products:
+ * /products:
  *   get:
  *     summary: Lấy danh sách sản phẩm
  *     tags: [Products]
@@ -155,7 +155,7 @@ router.get('/', getProducts);
 
 /**
  * @swagger
- * /api/products/filters:
+ * /products/filters:
  *   get:
  *     summary: Lấy tất cả các thuộc tính lọc sản phẩm
  *     tags: [Products]
@@ -170,7 +170,7 @@ router.get('/filters', getAllFilters);
 
 /**
  * @swagger
- * /api/products/search:
+ * /products/search:
  *   get:
  *     summary: Tìm kiếm sản phẩm theo từ khóa kết hợp với bộ lọc
  *     tags: [Products]
@@ -240,7 +240,7 @@ router.get('/search', searchProducts);
 
 /**
  * @swagger
- * /api/products/{id}:
+ * /products/{id}:
  *   get:
  *     summary: Lấy chi tiết sản phẩm
  *     tags: [Products]
@@ -264,7 +264,7 @@ router.get('/:id', getProductById);
 
 /**
  * @swagger
- * /api/products/{id}:
+ * /products/{id}:
  *   put:
  *     summary: Cập nhật sản phẩm
  *     tags: [Products]
@@ -331,7 +331,7 @@ router.put('/:id', authenticate, authorizeAdmin, updateProduct);
 
 /**
  * @swagger
- * /api/products/{id}:
+ * /products/{id}:
  *   delete:
  *     summary: Xóa sản phẩm
  *     tags: [Products]
@@ -359,7 +359,7 @@ router.delete('/:id', authenticate, authorizeAdmin, deleteProduct);
 
 /**
  * @swagger
- * /api/products/{id}/status:
+ * /products/{id}/status:
  *   patch:
  *     summary: Cập nhật trạng thái sản phẩm
  *     tags: [Products]
@@ -399,7 +399,7 @@ router.patch('/:id/status', authenticate, authorizeAdmin, updateProductStatus);
 
 /**
  * @swagger
- * /api/products/{id}/stock:
+ * /products/{id}/stock:
  *   patch:
  *     summary: Cập nhật tồn kho của các biến thể sản phẩm
  *     tags: [Products]
@@ -449,7 +449,7 @@ router.patch('/:id/stock', authenticate, authorizeAdmin, updateProductStock);
 
 /**
  * @swagger
- * /api/products/{id}/images:
+ * /products/{id}/images:
  *   patch:
  *     summary: Cập nhật hình ảnh của biến thể sản phẩm
  *     tags: [Products]

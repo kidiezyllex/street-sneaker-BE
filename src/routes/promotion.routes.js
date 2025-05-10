@@ -14,7 +14,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/promotions:
+ * /promotions:
  *   post:
  *     summary: Tạo chương trình khuyến mãi mới
  *     tags: [Promotions]
@@ -64,7 +64,7 @@ router.post('/', authenticate, authorizeAdmin, createPromotion);
 
 /**
  * @swagger
- * /api/promotions:
+ * /promotions:
  *   get:
  *     summary: Lấy danh sách chương trình khuyến mãi
  *     tags: [Promotions]
@@ -112,7 +112,7 @@ router.get('/', authenticate, authorizeAdmin, getPromotions);
 
 /**
  * @swagger
- * /api/promotions/{id}:
+ * /promotions/{id}:
  *   get:
  *     summary: Lấy chi tiết chương trình khuyến mãi
  *     tags: [Promotions]
@@ -140,7 +140,7 @@ router.get('/:id', authenticate, authorizeAdmin, getPromotionById);
 
 /**
  * @swagger
- * /api/promotions/{id}:
+ * /promotions/{id}:
  *   put:
  *     summary: Cập nhật chương trình khuyến mãi
  *     tags: [Promotions]
@@ -196,7 +196,7 @@ router.put('/:id', authenticate, authorizeAdmin, updatePromotion);
 
 /**
  * @swagger
- * /api/promotions/{id}:
+ * /promotions/{id}:
  *   delete:
  *     summary: Xóa chương trình khuyến mãi
  *     tags: [Promotions]
@@ -224,7 +224,7 @@ router.delete('/:id', authenticate, authorizeAdmin, deletePromotion);
 
 /**
  * @swagger
- * /api/promotions/product/{productId}:
+ * /promotions/product/{productId}:
  *   get:
  *     summary: Lấy danh sách khuyến mãi đang áp dụng cho sản phẩm
  *     tags: [Promotions]

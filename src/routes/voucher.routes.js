@@ -16,7 +16,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/vouchers:
+ * /vouchers:
  *   post:
  *     summary: Tạo phiếu giảm giá mới
  *     tags: [Vouchers]
@@ -86,7 +86,7 @@ router.post('/', authenticate, authorizeAdmin, createVoucher);
 
 /**
  * @swagger
- * /api/vouchers:
+ * /vouchers:
  *   get:
  *     summary: Lấy danh sách phiếu giảm giá
  *     tags: [Vouchers]
@@ -145,7 +145,7 @@ router.get('/', authenticate, authorizeAdmin, getVouchers);
 
 /**
  * @swagger
- * /api/vouchers/{id}:
+ * /vouchers/{id}:
  *   get:
  *     summary: Lấy chi tiết phiếu giảm giá
  *     tags: [Vouchers]
@@ -174,7 +174,7 @@ router.get('/:id', authenticate, authorizeAdmin, getVoucherById);
 
 /**
  * @swagger
- * /api/vouchers/{id}:
+ * /vouchers/{id}:
  *   put:
  *     summary: Cập nhật phiếu giảm giá
  *     tags: [Vouchers]
@@ -233,7 +233,7 @@ router.put('/:id', authenticate, authorizeAdmin, updateVoucher);
 
 /**
  * @swagger
- * /api/vouchers/{id}:
+ * /vouchers/{id}:
  *   delete:
  *     summary: Xóa phiếu giảm giá
  *     tags: [Vouchers]
@@ -262,7 +262,7 @@ router.delete('/:id', authenticate, authorizeAdmin, deleteVoucher);
 
 /**
  * @swagger
- * /api/vouchers/validate:
+ * /vouchers/validate:
  *   post:
  *     summary: Kiểm tra mã voucher hợp lệ
  *     tags: [Vouchers]
@@ -297,7 +297,7 @@ router.post('/validate', authenticate, validateVoucher);
 
 /**
  * @swagger
- * /api/vouchers/{id}/increment-usage:
+ * /vouchers/{id}/increment-usage:
  *   put:
  *     summary: Tăng số lượt sử dụng voucher
  *     tags: [Vouchers]
@@ -326,7 +326,7 @@ router.put('/:id/increment-usage', authenticate, authorizeAdmin, incrementVouche
 
 /**
  * @swagger
- * /api/vouchers/{id}/notify:
+ * /vouchers/{id}/notify:
  *   post:
  *     summary: Gửi thông báo về voucher đến tất cả khách hàng
  *     tags: [Vouchers]

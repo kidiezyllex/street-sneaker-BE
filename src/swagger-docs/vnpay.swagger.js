@@ -7,7 +7,7 @@
 
 /**
  * @swagger
- * /api/create-qr:
+ * /vnpay/create-qr:
  *   post:
  *     summary: Tạo mã QR thanh toán VNPay
  *     tags: [VNPay]
@@ -37,7 +37,7 @@
  *               returnUrl:
  *                 type: string
  *                 description: Đường dẫn callback sau khi thanh toán (tùy chọn)
- *                 example: "http://localhost:3008/api/check-payment-vnpay"
+ *                 example: "http://localhost:3008/vnpay/check-payment-vnpay"
  *               orderType:
  *                 type: string
  *                 description: Loại đơn hàng (tùy chọn)
@@ -77,7 +77,7 @@
 
 /**
  * @swagger
- * /api/check-payment-vnpay:
+ * /vnpay/check-payment-vnpay:
  *   get:
  *     summary: Kiểm tra kết quả thanh toán từ VNPay (callback URL)
  *     tags: [VNPay]

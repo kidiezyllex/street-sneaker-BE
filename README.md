@@ -1465,4 +1465,38 @@ Tài liệu này mô tả chi tiết các API của hệ thống Street Sneaker.
       "refreshToken": "string"
     }
   }
-  ``` 
+  ```
+
+## Troubleshooting: VNPay QR Endpoint (`/api/create-qr`)
+
+### Correct Usage
+
+```
+curl -X 'POST' \
+  'https://street-sneaker-be.onrender.com/api/create-qr' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "amount": 50000,
+  "orderInfo": "Thanh toan don hang #123456",
+  "txnRef": "123456",
+  "returnUrl": "http://localhost:3008/api/check-payment-vnpay",
+  "orderType": "other",
+  "locale": "vn"
+}'
+```
+
+### Common Mistakes
+
+- **Double `/api/` in the URL:**
+  - Incorrect: `https://street-sneaker-be.onrender.com/api/api/create-qr`
+  - Correct:   `https://street-sneaker-be.onrender.com/api/create-qr`
+- **Unnecessary Authorization header:**
+  - This endpoint is public and does **not** require an `Authorization` header.
+- **Missing required fields:**
+  - Required: `amount`, `orderInfo`, `txnRef`
+  - Optional: `returnUrl`, `orderType`, `locale`
+
+### Response
+- On success (`201`): Returns a JSON object with the QR payment URL.
+- On error: Returns a JSON object with an error message and status code. 

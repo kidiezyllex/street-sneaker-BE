@@ -16,7 +16,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/orders:
+ * /orders:
  *   post:
  *     summary: Tạo đơn hàng mới
  *     tags: [Orders]
@@ -102,7 +102,7 @@ router.post('/', createOrder);
 
 /**
  * @swagger
- * /api/orders:
+ * /orders:
  *   get:
  *     summary: Lấy danh sách đơn hàng
  *     tags: [Orders]
@@ -169,7 +169,7 @@ router.get('/', authenticate, authorizeAdmin, getOrders);
 
 /**
  * @swagger
- * /api/orders/my-orders:
+ * /orders/my-orders:
  *   get:
  *     summary: Lấy danh sách đơn hàng của người dùng đăng nhập
  *     tags: [Orders]
@@ -206,7 +206,7 @@ router.get('/my-orders', authenticate, getMyOrders);
 
 /**
  * @swagger
- * /api/orders/{id}:
+ * /orders/{id}:
  *   get:
  *     summary: Lấy chi tiết đơn hàng
  *     tags: [Orders]
@@ -235,7 +235,7 @@ router.get('/:id', authenticate, getOrderById);
 
 /**
  * @swagger
- * /api/orders/{id}:
+ * /orders/{id}:
  *   put:
  *     summary: Cập nhật đơn hàng
  *     tags: [Orders]
@@ -292,7 +292,7 @@ router.put('/:id', authenticate, authorizeAdmin, updateOrder);
 
 /**
  * @swagger
- * /api/orders/{id}/cancel:
+ * /orders/{id}/cancel:
  *   patch:
  *     summary: Hủy đơn hàng
  *     tags: [Orders]
@@ -323,7 +323,7 @@ router.patch('/:id/cancel', authenticate, cancelOrder);
 
 /**
  * @swagger
- * /api/orders/{id}/status:
+ * /orders/{id}/status:
  *   patch:
  *     summary: Cập nhật trạng thái đơn hàng
  *     tags: [Orders]
@@ -366,7 +366,7 @@ router.patch('/:id/status', authenticate, authorizeAdmin, updateOrderStatus);
 
 /**
  * @swagger
- * /api/orders/user/{userId}:
+ * /orders/user/{userId}:
  *   get:
  *     summary: Lấy danh sách đơn hàng theo _id của user
  *     tags: [Orders]
