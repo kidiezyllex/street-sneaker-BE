@@ -3,6 +3,8 @@ import Order from '../models/order.model.js';
 import mongoose from 'mongoose';
 import { createPayment as createVNPayURL, verifyPayment } from '../utils/vnpay-fixed.js';
 import querystring from 'querystring';
+// Add a global import for the fixed VNPay implementation
+import { getVNPayFixed } from '../utils/vnpay-direct-fix.js';
 // Removed top-level dayjs imports and extension
 // import dayjs from 'dayjs'; // Use dayjs instead of moment
 // import timezone from 'dayjs/plugin/timezone.js'; // Import the timezone plugin
@@ -324,10 +326,8 @@ export const deletePayment = async (req, res) => {
     
     const orderId = payment.order;
 
-    // Xóa payment
     await Payment.findByIdAndDelete(id);
 
-    // --- Cập nhật lại trạng thái thanh toán của Order ---
      const order = await Order.findById(orderId);
      if(order) {
          const paymentsForOrder = await Payment.find({ order: orderId, status: 'COMPLETED' });
@@ -410,8 +410,9 @@ export const handleVNPayReturn = async (req, res) => {
   try {
     const vnpParams = req.query;
     
-    // Sử dụng hàm mới từ vnpay-fixed.js
+    // Use the original verifyPayment for this function as it's already set up
     const isValidSignature = verifyPayment(vnpParams);
+    
     if (!isValidSignature) {
       // VNPay's own error page will show if their signature check fails.
       // If our internal check fails, we can redirect to our own error message.
@@ -437,6 +438,9 @@ export const handleVNPayReturn = async (req, res) => {
     }
     const orderIdForPaymentRecord = order._id; // Use the actual MongoDB _id for the payment record
 
+    const vnpayModule = await getVNPayFixed();
+    const { dayjs } = vnpayModule;
+    
     // Tạo payment record
     const payment = new Payment({
       order: orderIdForPaymentRecord, // Use the actual ObjectId
@@ -655,21 +659,24 @@ export const createQrVNPay = async (req, res) => {
     } else if (clientIp.substr(0, 7) === '::ffff:') {
       clientIp = clientIp.substr(7);
     }
-    const { getVNPay } = await import('../utils/vnpay-wrapper.js');
-    const { VNPay, ignoreLogger, ProductCode, VnpLocale, dateFormat } = await getVNPay();
 
-    const vnpay = new VNPay({
+    // Get our fixed VNPay implementation
+    const vnpayModule = await getVNPayFixed();
+    const { VNPay, ignoreLogger, ProductCode, VnpLocale, dateFormat, dayjs } = vnpayModule;
+
+    // Create VNPay instance
+    const vnpay = vnpayModule.createVNPayInstance({
       tmnCode: "LXS5R4EG",
       secureSecret: 'E9ZVT6V5D1XF2APNOJP7UBWU91VHGWG7',
       vnpayHost: 'https://sandbox.vnpayment.vn',
-      testMode: true,
-      hashAlgorithm: 'SHA512',
-      LoggerFn: ignoreLogger
+      testMode: true
     });
 
+    // Set up expiration date (15 minutes from now)
     const now = dayjs();
     const tomorrow = now.add(15, 'minute');
 
+    // Build payment URL
     const paymentUrl = await vnpay.buildPaymentUrl({
       vnp_Amount: parseInt(amount),
       vnp_IpAddr: clientIp,
@@ -770,12 +777,12 @@ export const checkPaymentVNPay = async (req, res) => {
   try {
     const vnpParams = req.query;
     
-    // Use our wrapper instead of direct imports
-    const { getVNPay } = await import('../utils/vnpay-wrapper.js');
-    const { VNPay, ignoreLogger } = await getVNPay();
+    // Get our fixed VNPay implementation
+    const vnpayModule = await getVNPayFixed();
+    const { VNPay, ignoreLogger, dayjs } = vnpayModule;
 
     // Create VNPay instance
-    const vnpay = new VNPay({
+    const vnpay = vnpayModule.createVNPayInstance({
       tmnCode: "LXS5R4EG",
       secureSecret: 'E9ZVT6V5D1XF2APNOJP7UBWU91VHGWG7',
       vnpayHost: 'https://sandbox.vnpayment.vn',
