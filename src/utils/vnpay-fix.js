@@ -7,11 +7,10 @@ import dayjs from 'dayjs';
 const utc = require('dayjs/plugin/utc.js');
 const timezone = require('dayjs/plugin/timezone.js');
 
-// Apply plugins
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-// Import vnpay with patched dependencies
 const vnpay = require('vnpay');
 
+export { dateFormat, ProductCode, VnpLocale };
 export default vnpay; 
