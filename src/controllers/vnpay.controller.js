@@ -1,6 +1,15 @@
 import vnpay, { dateFormat, ProductCode, VnpLocale } from '../utils/vnpay-fix.js';
 import { v4 as uuidv4 } from 'uuid';
 
+// Initialize VNPay instance once
+const vnpayInstance = new vnpay.VNPay({
+  tmnCode: "LXS5R4EG",
+  secureSecret: 'E9ZVT6V5D1XF2APNOJP7UBWU91VHGWG7',
+  vnpayHost: 'https://sandbox.vnpayment.vn',
+  testMode: true,
+  hashAlgorithm: 'SHA512'
+});
+
 /**
  * Create QR payment URL using VNPay
  * @param {Object} req - Express request object
@@ -9,23 +18,14 @@ import { v4 as uuidv4 } from 'uuid';
  */
 export const createQR = async (req, res) => {
   try {
-    const { amount, orderInfo, ipAddr, returnUrl } = req.body;
+    const { amount, orderInfo, returnUrl } = req.body;
 
-    if (!amount || !orderInfo || !ipAddr) {
+    if (!amount || !orderInfo) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required parameters: amount, orderInfo, ipAddr'
+        message: 'Missing required parameters: amount, orderInfo'
       });
     }
-
-    // Initialize VNPay instance
-    const vnpay = new vnpay.VNPay({
-      tmnCode: "LXS5R4EG",
-      secureSecret: 'E9ZVT6V5D1XF2APNOJP7UBWU91VHGWG7',
-      vnpayHost: 'https://sandbox.vnpayment.vn',
-      testMode: true,
-      hashAlgorithm: 'SHA512'
-    });
 
     // Generate transaction reference
     const txnRef = uuidv4().replace(/-/g, '').substring(0, 15);
@@ -35,9 +35,8 @@ export const createQR = async (req, res) => {
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     // Build VNPay payment URL
-    const vnpayResponse = await vnpay.buildPaymentUrl({
+    const vnpayResponse = await vnpayInstance.buildPaymentUrl({
       vnp_Amount: Number(amount),
-      vnp_IpAddr: ipAddr,
       vnp_TxnRef: txnRef,
       vnp_OrderInfo: orderInfo,
       vnp_OrderType: ProductCode.Other,
@@ -72,17 +71,8 @@ export const checkPayment = async (req, res) => {
   try {
     const vnpayParams = req.query;
     
-    // Initialize VNPay instance
-    const vnpay = new vnpay.VNPay({
-      tmnCode: "LXS5R4EG",
-      secureSecret: 'E9ZVT6V5D1XF2APNOJP7UBWU91VHGWG7',
-      vnpayHost: 'https://sandbox.vnpayment.vn',
-      testMode: true, 
-      hashAlgorithm: 'SHA512'
-    });
-
     // Verify payment response
-    const verifyResult = vnpay.verifyReturnUrl(vnpayParams);
+    const verifyResult = vnpayInstance.verifyReturnUrl(vnpayParams);
 
     if (verifyResult.isSuccess) {
       // Payment successful - implement your business logic here
