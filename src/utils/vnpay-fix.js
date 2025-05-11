@@ -11,6 +11,8 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 const vnpay = require('vnpay');
+// Extract the needed exports from vnpay
+const { ProductCode, VnpLocale, dateFormat } = vnpay;
 
 export { dateFormat, ProductCode, VnpLocale };
 export default vnpay; 

@@ -7,7 +7,7 @@
     "dev": "tsx src/index.ts",
     "build": "tsc",
     "prestart": "node fix-vnpay.js",
-    "start": "NODE_ENV=production node dist/index.js",
+    "start": "set NODE_ENV=production&&node dist/index.js",
     "lint": "eslint src/",
     "db:push": "drizzle-kit push",
     "postinstall": "npm rebuild bcrypt --update-binary"
