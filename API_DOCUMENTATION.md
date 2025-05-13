@@ -438,6 +438,48 @@ Tài liệu này mô tả chi tiết các API của hệ thống Street Sneaker.
   }
   ```
 
+### 2.9. Lấy danh sách voucher có sẵn cho người dùng
+- **Route**: `/api/vouchers/user/:userId`
+- **Method**: GET
+- **Access**: Private (User needs to be authenticated)
+- **Description**: Lấy danh sách các phiếu giảm giá đang hoạt động, còn hiệu lực và còn số lượng mà người dùng (xác định bởi `userId`) có thể sử dụng.
+- **Path Parameters**:
+  - `userId` (string, required): ID của người dùng.
+- **Query Parameters**:
+  - `page` (number, optional, default: 1): Số trang.
+  - `limit` (number, optional, default: 10): Số lượng voucher mỗi trang.
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Lấy danh sách phiếu giảm giá có sẵn thành công",
+    "data": {
+      "vouchers": [
+        {
+          "_id": "string",
+          "code": "string",
+          "name": "string",
+          "type": "PERCENTAGE | FIXED_AMOUNT",
+          "value": "number",
+          "quantity": "number",
+          "usedCount": "number",
+          "startDate": "date",
+          "endDate": "date",
+          "minOrderValue": "number",
+          "maxDiscount": "number",
+          "status": "HOAT_DONG"
+        }
+      ],
+      "pagination": {
+        "totalItems": "number",
+        "totalPages": "number",
+        "currentPage": "number",
+        "limit": "number"
+      }
+    }
+  }
+  ```
+
 ## 3. Quản lý Khuyến mãi (Promotion)
 
 ### 3.1. Tạo chương trình khuyến mãi

@@ -494,3 +494,54 @@ export const notifyVoucher = async (req, res) => {
     });
   }
 };
+
+/**
+ * Lấy danh sách phiếu giảm giá có sẵn cho người dùng
+ * @route GET /api/vouchers/user/:userId
+ * @access Private
+ */
+export const getAvailableVouchersForUser = async (req, res) => {
+  try {
+    // const { userId } = req.params; // UserId can be used for future personalization
+    // For now, we get all active and available vouchers
+
+    const currentDate = new Date();
+    const filter = {
+      status: 'HOAT_DONG',
+      startDate: { $lte: currentDate },
+      endDate: { $gte: currentDate },
+      $expr: { $gt: ["$quantity", "$usedCount"] } // quantity > usedCount
+    };
+
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const total = await Voucher.countDocuments(filter);
+    const vouchers = await Voucher.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    return res.status(200).json({
+      success: true,
+      message: 'Lấy danh sách phiếu giảm giá có sẵn thành công',
+      data: {
+        vouchers,
+        pagination: {
+          totalItems: total,
+          totalPages: Math.ceil(total / parseInt(limit)),
+          currentPage: parseInt(page),
+          limit: parseInt(limit)
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách phiếu giảm giá cho người dùng:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Đã xảy ra lỗi khi lấy danh sách phiếu giảm giá cho người dùng',
+      error: error.message
+    });
+  }
+};

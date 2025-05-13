@@ -7,7 +7,8 @@ import {
   deleteVoucher,
   validateVoucher,
   incrementVoucherUsage,
-  notifyVoucher
+  notifyVoucher,
+  getAvailableVouchersForUser
 } from '../controllers/voucher.controller.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
 import { authorizeAdmin } from '../middlewares/role.middleware.js';
@@ -352,5 +353,62 @@ router.put('/:id/increment-usage', authenticate, authorizeAdmin, incrementVouche
  *         description: Lỗi máy chủ
  */
 router.post('/:id/notify', authenticate, authorizeAdmin, notifyVoucher);
+
+/**
+ * @swagger
+ * /vouchers/user/{userId}:
+ *   get:
+ *     summary: Lấy danh sách phiếu giảm giá có sẵn cho người dùng (theo userId)
+ *     tags: [Vouchers]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID của người dùng
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Số trang
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Số lượng mỗi trang
+ *     responses:
+ *       200:
+ *         description: Lấy danh sách voucher có sẵn thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     vouchers:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Voucher'
+ *                     pagination:
+ *                       $ref: '#/components/schemas/Pagination'
+ *       400:
+ *         description: ID người dùng không hợp lệ
+ *       401:
+ *         description: Không có quyền truy cập
+ *       500:
+ *         description: Lỗi máy chủ
+ */
+router.get('/user/:userId', authenticate, getAvailableVouchersForUser);
 
 export default router; 
