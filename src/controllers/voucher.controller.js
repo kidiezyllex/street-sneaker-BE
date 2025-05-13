@@ -502,19 +502,50 @@ export const notifyVoucher = async (req, res) => {
  */
 export const getAvailableVouchersForUser = async (req, res) => {
   try {
-    // const { userId } = req.params; // UserId can be used for future personalization
-    // For now, we get all active and available vouchers
-
+    const { userId } = req.params;
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
     const currentDate = new Date();
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID người dùng không hợp lệ'
+      });
+    }
+
+    const userNotifications = await Notification.find({
+      recipients: userId,
+      relatedTo: 'VOUCHER',
+      status: 'SENT'
+    }).select('relatedId');
+
+    const notifiedVoucherIds = userNotifications.map(notification => notification.relatedId);
+
+    if (notifiedVoucherIds.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: 'Không có phiếu giảm giá nào có sẵn cho người dùng này',
+        data: {
+          vouchers: [],
+          pagination: {
+            totalItems: 0,
+            totalPages: 0,
+            currentPage: parseInt(page),
+            limit: parseInt(limit)
+          }
+        }
+      });
+    }
+
+    // Filter for vouchers that the user was notified about and are currently available
     const filter = {
+      _id: { $in: notifiedVoucherIds },
       status: 'HOAT_DONG',
       startDate: { $lte: currentDate },
       endDate: { $gte: currentDate },
       $expr: { $gt: ["$quantity", "$usedCount"] } // quantity > usedCount
     };
-
-    const { page = 1, limit = 10 } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
 
     const total = await Voucher.countDocuments(filter);
     const vouchers = await Voucher.find(filter)
