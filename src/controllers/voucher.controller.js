@@ -542,7 +542,6 @@ export const getAvailableVouchersForUser = async (req, res) => {
     const filter = {
       _id: { $in: notifiedVoucherIds },
       status: 'HOAT_DONG',
-      startDate: { $lte: currentDate },
       endDate: { $gte: currentDate },
       $expr: { $gt: ["$quantity", "$usedCount"] } // quantity > usedCount
     };
