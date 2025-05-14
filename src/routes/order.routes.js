@@ -35,6 +35,9 @@ const router = express.Router();
  *               - total
  *               - paymentMethod
  *             properties:
+ *               orderId:
+ *                 type: string
+ *                 description: ID của đơn hàng (tùy chọn, dùng cho POS)
  *               customer:
  *                 type: string
  *                 description: ID của khách hàng

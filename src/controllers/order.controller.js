@@ -9,6 +9,7 @@ import mongoose from 'mongoose';
 export const createOrder = async (req, res) => {
   try {
     const { 
+      orderId,
       customer, 
       items, 
       voucher, 
@@ -19,7 +20,6 @@ export const createOrder = async (req, res) => {
       paymentMethod 
     } = req.body;
 
-    // Kiểm tra các trường bắt buộc
     if (!customer || !items || !subTotal || !total || !paymentMethod) {
       return res.status(400).json({
         success: false,
@@ -27,8 +27,8 @@ export const createOrder = async (req, res) => {
       });
     }
 
-    // Tạo đơn hàng mới
     const newOrder = new Order({
+      code: orderId,
       customer,
       staff: req.account ? req.account._id : undefined,
       items,

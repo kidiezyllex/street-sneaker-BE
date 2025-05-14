@@ -1,5 +1,5 @@
 import express from 'express';
-import { createQR, checkPayment } from '../controllers/vnpay.controller.js';
+import { createQR, checkPayment, handleIPN } from '../controllers/vnpay.controller.js';
 
 const router = express.Router();
 
@@ -158,5 +158,69 @@ router.post('/create-qr', createQR);
  *         description: Lỗi máy chủ
  */
 router.get('/check-payment-vnpay', checkPayment);
+
+/**
+ * @swagger
+ * /vnpay/vnpay_ipn:
+ *   get:
+ *     summary: VNPay IPN (Instant Payment Notification) URL
+ *     tags: [VNPay]
+ *     description: >
+ *       This endpoint is for VNPay to send server-to-server notifications about the payment status.
+ *       It should verify the secure hash and update the order status in the database.
+ *       VNPay expects a JSON response: {"RspCode":"00","Message":"Confirm Success"} for successful processing.
+ *     parameters:
+ *       - in: query
+ *         name: vnp_Amount
+ *         schema: { type: string }
+ *       - in: query
+ *         name: vnp_BankCode
+ *         schema: { type: string }
+ *       - in: query
+ *         name: vnp_BankTranNo
+ *         schema: { type: string }
+ *       - in: query
+ *         name: vnp_CardType
+ *         schema: { type: string }
+ *       - in: query
+ *         name: vnp_OrderInfo
+ *         schema: { type: string }
+ *       - in: query
+ *         name: vnp_PayDate
+ *         schema: { type: string }
+ *       - in: query
+ *         name: vnp_ResponseCode
+ *         schema: { type: string }
+ *       - in: query
+ *         name: vnp_TmnCode
+ *         schema: { type: string }
+ *       - in: query
+ *         name: vnp_TransactionNo
+ *         schema: { type: string }
+ *       - in: query
+ *         name: vnp_TransactionStatus
+ *         schema: { type: string }
+ *       - in: query
+ *         name: vnp_TxnRef
+ *         schema: { type: string }
+ *       - in: query
+ *         name: vnp_SecureHash
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: IPN processed, VNPAY expects specific JSON response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 RspCode:
+ *                   type: string
+ *                   example: "00"
+ *                 Message:
+ *                   type: string
+ *                   example: "Confirm Success"
+ */
+router.get('/vnpay_ipn', handleIPN);
 
 export default router; 
