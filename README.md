@@ -845,6 +845,61 @@ Tài liệu này mô tả chi tiết các API của hệ thống Street Sneaker.
   }
   ```
 
+- **Route**: `/api/orders/pos`
+- **Method**: POST
+- **Payload**:
+  ```json
+  {
+    "customer": "string",
+    "items": [
+      {
+        "product": "string",
+        "variant": {
+          "colorId": "string",
+          "sizeId": "string"
+        },
+        "quantity": "number",
+        "price": "number"
+      }
+    ],
+    "voucher": "string",
+    "subTotal": "number",
+    "discount": "number",
+    "total": "number",
+    "shippingAddress": {
+      "name": "string",
+      "phoneNumber": "string",
+      "provinceId": "string",
+      "districtId": "string",
+      "wardId": "string",
+      "specificAddress": "string"
+    },
+    "paymentMethod": "CASH | BANK_TRANSFER | COD | MIXED"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "_id": "string",
+      "orderNumber": "string",
+      "customer": "object",
+      "items": [...],
+      "voucher": "object",
+      "subTotal": "number",
+      "discount": "number",
+      "total": "number",
+      "shippingAddress": "object",
+      "paymentMethod": "string",
+      "orderStatus": "CHO_XAC_NHAN",
+      "paymentStatus": "PENDING",
+      "createdAt": "date",
+      "updatedAt": "date"
+    }
+  }
+  ```
+
 ## 5. Quản lý Trả hàng
 
 ### 5.1. Tạo đơn trả hàng

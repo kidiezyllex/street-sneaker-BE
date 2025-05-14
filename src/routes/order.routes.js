@@ -7,7 +7,8 @@ import {
   cancelOrder,
   updateOrderStatus,
   getMyOrders,
-  getOrdersByUserId
+  getOrdersByUserId,
+  createPOSOrder
 } from '../controllers/order.controller.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
 import { authorizeAdmin } from '../middlewares/role.middleware.js';
@@ -102,6 +103,127 @@ const router = express.Router();
  *         description: Lỗi máy chủ
  */
 router.post('/', createOrder);
+
+/**
+ * @swagger
+ * /orders/pos:
+ *   post:
+ *     summary: Tạo đơn hàng POS mới (tại quầy)
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: [] # Assuming POS operations require authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - orderId
+ *               - items
+ *               - subTotal
+ *               - total
+ *               - paymentMethod
+ *             properties:
+ *               orderId:
+ *                 type: string
+ *                 description: ID của đơn hàng POS (ví dụ: POS073618)
+ *                 example: "POS073618"
+ *               customer:
+ *                 type: string # Could be a customer ID or a name string
+ *                 description: Tên khách hàng hoặc ID khách hàng. Nếu là tên, sẽ được lưu trực tiếp.
+ *                 example: "Teu Young Boy"
+ *               items:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   required:
+ *                     - product
+ *                     - quantity
+ *                     - price
+ *                   properties:
+ *                     product:
+ *                       type: string
+ *                       description: ID của sản phẩm
+ *                       example: "681a2fd531964fccfb60add7"
+ *                     quantity:
+ *                       type: number
+ *                       minimum: 1
+ *                       example: 1
+ *                     price:
+ *                       type: number
+ *                       description: Giá bán tại thời điểm mua POS (có thể khác giá niêm yết)
+ *                       example: 3890000
+ *                     variant:
+ *                       type: object
+ *                       properties:
+ *                         colorId:
+ *                           type: string
+ *                           example: "681162d2893c72093670b267"
+ *                         sizeId:
+ *                           type: string
+ *                           example: "68116b5c893c72093670b4d7"
+ *               subTotal:
+ *                 type: number
+ *                 description: Tổng tiền trước khi giảm giá
+ *                 example: 6180000
+ *               total:
+ *                 type: number
+ *                 description: Tổng tiền sau khi giảm giá (bằng subTotal nếu không có discount)
+ *                 example: 6180000
+ *               shippingAddress:
+ *                 type: object
+ *                 description: Thông tin giao hàng (tùy chọn, sẽ được mặc định cho đơn POS)
+ *                 properties:
+ *                   name:
+ *                     type: string
+ *                     example: "Teu Young Boy"
+ *                   phoneNumber:
+ *                     type: string
+ *                     example: "09343223432"
+ *                   provinceId:
+ *                     type: string
+ *                     example: "N/A"
+ *                   districtId:
+ *                     type: string
+ *                     example: "N/A"
+ *                   wardId:
+ *                     type: string
+ *                     example: "N/A"
+ *                   specificAddress:
+ *                     type: string
+ *                     example: "Tại quầy"
+ *               paymentMethod:
+ *                 type: string
+ *                 enum: [CASH, BANK_TRANSFER, COD, MIXED] # Consider if other methods are valid for POS
+ *                 example: "CASH"
+ *               discount:
+ *                 type: number
+ *                 description: Số tiền giảm giá
+ *                 example: 0
+ *               voucher:
+ *                 type: string
+ *                 description: ID của voucher (nếu có)
+ *                 example: ""
+ *     responses:
+ *       201:
+ *         description: Tạo đơn hàng POS thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Order' # Assuming you have an Order schema
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ *       401:
+ *         description: Không có quyền truy cập (Chưa đăng nhập)
+ *       403:
+ *         description: Không có quyền thực hiện (VD: không phải admin/staff)
+ *       409:
+ *         description: Xung đột dữ liệu (VD: Mã đơn hàng đã tồn tại)
+ *       500:
+ *         description: Lỗi máy chủ
+ */
+router.post('/pos', authenticate, authorizeAdmin, createPOSOrder);
 
 /**
  * @swagger
@@ -371,7 +493,7 @@ router.patch('/:id/status', authenticate, authorizeAdmin, updateOrderStatus);
  * @swagger
  * /orders/user/{userId}:
  *   get:
- *     summary: Lấy danh sách đơn hàng theo _id của user
+ *     summary: Lấy danh sách đơn hàng theo ID người dùng (Admin)
  *     tags: [Orders]
  *     security:
  *       - bearerAuth: []
@@ -382,11 +504,6 @@ router.patch('/:id/status', authenticate, authorizeAdmin, updateOrderStatus);
  *         schema:
  *           type: string
  *         description: ID của người dùng
- *       - in: query
- *         name: orderStatus
- *         schema:
- *           type: string
- *         description: Lọc theo trạng thái đơn hàng
  *       - in: query
  *         name: page
  *         schema:
@@ -403,12 +520,16 @@ router.patch('/:id/status', authenticate, authorizeAdmin, updateOrderStatus);
  *       200:
  *         description: Lấy danh sách đơn hàng thành công
  *       400:
- *         description: ID không hợp lệ
+ *         description: ID người dùng không hợp lệ
  *       401:
  *         description: Không có quyền truy cập
+ *       403:
+ *         description: Không có quyền admin
+ *       404:
+ *         description: Không tìm thấy người dùng
  *       500:
  *         description: Lỗi máy chủ
  */
-router.get('/user/:userId', getOrdersByUserId);
+router.get('/user/:userId', authenticate, authorizeAdmin, getOrdersByUserId);
 
 export default router; 

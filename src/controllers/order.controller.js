@@ -491,4 +491,93 @@ export const getOrdersByUserId = async (req, res) => {
       error: error.message
     });
   }
+};
+
+/**
+ * Tạo đơn hàng POS mới
+ * @route POST /api/orders/pos
+ * @access Private (Assuming staff/admin access)
+ */
+export const createPOSOrder = async (req, res) => {
+  try {
+    const {
+      orderId, // Required for POS
+      customer, // Can be a name string for POS, or a customer ID
+      items,
+      voucher,
+      subTotal,
+      total,
+      shippingAddress, // Optional, will be defaulted for POS
+      paymentMethod,
+      discount,
+    } = req.body;
+
+    // Validate required fields for POS
+    if (!orderId || !items || !subTotal || !total || !paymentMethod) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng cung cấp đầy đủ thông tin: orderId, items, subTotal, total, paymentMethod'
+      });
+    }
+    
+    // Default shipping address for POS if not provided or partially provided
+    const finalShippingAddress = {
+      name: shippingAddress?.name || customer || 'Khách lẻ', // Use customer name or "Khách lẻ"
+      phoneNumber: shippingAddress?.phoneNumber || 'N/A',
+      provinceId: shippingAddress?.provinceId || 'N/A',
+      districtId: shippingAddress?.districtId || 'N/A',
+      wardId: shippingAddress?.wardId || 'N/A',
+      specificAddress: shippingAddress?.specificAddress || 'Tại quầy',
+    };
+
+    const newOrder = new Order({
+      code: orderId,
+      customer, // This might need adjustment if 'customer' is just a name string.
+                // Assuming Order model can handle a string or ObjectId for customer,
+                // or it's an ObjectId of a "Guest Customer" record.
+      staff: req.account ? req.account._id : undefined, // Assuming staff is logged in
+      items,
+      voucher,
+      subTotal,
+      discount: discount || 0,
+      total,
+      shippingAddress: finalShippingAddress,
+      paymentMethod,
+      paymentStatus: 'PAID', // POS orders are typically paid immediately
+      orderStatus: 'HOAN_THANH' // POS orders are typically completed immediately
+    });
+
+    await newOrder.save();
+
+    // Populate thông tin để trả về
+    const populatedOrder = await Order.findById(newOrder._id)
+      .populate('customer', 'fullName email phoneNumber') // This populate might fail if customer is a string
+      .populate('staff', 'fullName')
+      .populate('voucher')
+      .populate({
+        path: 'items.product',
+        select: 'name code imageUrl'
+      });
+
+    return res.status(201).json({
+      success: true,
+      message: 'Tạo đơn hàng POS thành công',
+      data: populatedOrder
+    });
+  } catch (error) {
+    console.error('Lỗi khi tạo đơn hàng POS:', error);
+    // Check for duplicate key error (e.g., if orderId is not unique)
+    if (error.code === 11000) {
+        return res.status(409).json({ // 409 Conflict
+            success: false,
+            message: 'Lỗi khi tạo đơn hàng POS: Mã đơn hàng đã tồn tại.',
+            error: error.message
+        });
+    }
+    return res.status(500).json({
+      success: false,
+      message: 'Đã xảy ra lỗi khi tạo đơn hàng POS',
+      error: error.message
+    });
+  }
 }; 
