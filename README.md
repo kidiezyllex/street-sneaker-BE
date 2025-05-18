@@ -12,6 +12,7 @@ Tài liệu này mô tả chi tiết các API của hệ thống Street Sneaker.
 6. [Quản lý Tài khoản](#6-quản-lý-tài-khoản)
 7. [Thống kê và Báo cáo](#7-thống-kê-và-báo-cáo)
 8. [Xác thực và Phân quyền](#8-xác-thực-và-phân-quyền)
+9. [Quản lý Thuộc tính Sản phẩm](#9-quản-lý-thuộc-tính-sản-phẩm)
 
 ## Giới thiệu chung
 
@@ -1563,6 +1564,245 @@ Tài liệu này mô tả chi tiết các API của hệ thống Street Sneaker.
     }
   }
   ```
+
+## 9. Quản lý Thuộc tính Sản phẩm
+
+Các API quản lý thuộc tính sản phẩm bao gồm các thuộc tính như: Thương hiệu (Brand), Danh mục (Category), Chất liệu (Material), Màu sắc (Color), và Kích thước (Size).
+
+### 9.1. Quản lý Thương hiệu (Brand)
+
+#### 9.1.1. Lấy danh sách thương hiệu
+- **Route**: `/api/attributes/brands`
+- **Method**: GET
+- **Request Params**:
+  - `status` (string, optional): Lọc theo trạng thái (HOAT_DONG/KHONG_HOAT_DONG)
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "data": [
+      {
+        "_id": "60d21b4667d0d8992e610c85",
+        "name": "Nike",
+        "status": "HOAT_DONG",
+        "createdAt": "2023-06-22T14:25:32.952Z",
+        "updatedAt": "2023-06-22T14:25:32.952Z"
+      }
+    ],
+    "message": "Retrieved successfully"
+  }
+  ```
+
+#### 9.1.2. Tạo thương hiệu mới
+- **Route**: `/api/attributes/brands`
+- **Method**: POST
+- **Payload**:
+  ```json
+  {
+    "name": "Nike",
+    "status": "HOAT_DONG"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "_id": "60d21b4667d0d8992e610c85",
+      "name": "Nike",
+      "status": "HOAT_DONG",
+      "createdAt": "2023-06-22T14:25:32.952Z",
+      "updatedAt": "2023-06-22T14:25:32.952Z"
+    },
+    "message": "Created successfully"
+  }
+  ```
+
+#### 9.1.3. Lấy chi tiết thương hiệu
+- **Route**: `/api/attributes/brands/:id`
+- **Method**: GET
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "_id": "60d21b4667d0d8992e610c85",
+      "name": "Nike",
+      "status": "HOAT_DONG",
+      "createdAt": "2023-06-22T14:25:32.952Z",
+      "updatedAt": "2023-06-22T14:25:32.952Z"
+    },
+    "message": "Retrieved successfully"
+  }
+  ```
+
+#### 9.1.4. Cập nhật thương hiệu
+- **Route**: `/api/attributes/brands/:id`
+- **Method**: PUT
+- **Payload**:
+  ```json
+  {
+    "name": "Nike Updated",
+    "status": "HOAT_DONG"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "_id": "60d21b4667d0d8992e610c85",
+      "name": "Nike Updated",
+      "status": "HOAT_DONG",
+      "createdAt": "2023-06-22T14:25:32.952Z",
+      "updatedAt": "2023-06-22T15:30:45.123Z"
+    },
+    "message": "Updated successfully"
+  }
+  ```
+
+#### 9.1.5. Xóa thương hiệu
+- **Route**: `/api/attributes/brands/:id`
+- **Method**: DELETE
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Deleted successfully"
+  }
+  ```
+
+### 9.2. Quản lý Danh mục (Category)
+
+Tương tự như quản lý thương hiệu, nhưng sử dụng endpoint `/api/attributes/categories`.
+
+### 9.3. Quản lý Chất liệu (Material)
+
+Tương tự như quản lý thương hiệu, nhưng sử dụng endpoint `/api/attributes/materials`.
+
+### 9.4. Quản lý Màu sắc (Color)
+
+#### 9.4.1. Lấy danh sách màu sắc
+- **Route**: `/api/attributes/colors`
+- **Method**: GET
+- **Request Params**:
+  - `status` (string, optional): Lọc theo trạng thái (HOAT_DONG/KHONG_HOAT_DONG)
+
+#### 9.4.2. Tạo màu sắc mới
+- **Route**: `/api/attributes/colors`
+- **Method**: POST
+- **Payload**:
+  ```json
+  {
+    "name": "Red",
+    "code": "#FF0000",
+    "status": "HOAT_DONG"
+  }
+  ```
+
+#### 9.4.3. Lấy chi tiết màu sắc
+- **Route**: `/api/attributes/colors/:id`
+- **Method**: GET
+
+#### 9.4.4. Cập nhật màu sắc
+- **Route**: `/api/attributes/colors/:id`
+- **Method**: PUT
+- **Payload**:
+  ```json
+  {
+    "name": "Dark Red",
+    "code": "#8B0000",
+    "status": "HOAT_DONG"
+  }
+  ```
+
+#### 9.4.5. Xóa màu sắc
+- **Route**: `/api/attributes/colors/:id`
+- **Method**: DELETE
+
+### 9.5. Quản lý Kích thước (Size)
+
+#### 9.5.1. Lấy danh sách kích thước
+- **Route**: `/api/attributes/sizes`
+- **Method**: GET
+- **Request Params**:
+  - `status` (string, optional): Lọc theo trạng thái (HOAT_DONG/KHONG_HOAT_DONG)
+
+#### 9.5.2. Tạo kích thước mới
+- **Route**: `/api/attributes/sizes`
+- **Method**: POST
+- **Payload**:
+  ```json
+  {
+    "value": 42,
+    "status": "HOAT_DONG"
+  }
+  ```
+
+#### 9.5.3. Lấy chi tiết kích thước
+- **Route**: `/api/attributes/sizes/:id`
+- **Method**: GET
+
+#### 9.5.4. Cập nhật kích thước
+- **Route**: `/api/attributes/sizes/:id`
+- **Method**: PUT
+- **Payload**:
+  ```json
+  {
+    "value": 43,
+    "status": "HOAT_DONG"
+  }
+  ```
+
+#### 9.5.5. Xóa kích thước
+- **Route**: `/api/attributes/sizes/:id`
+- **Method**: DELETE
+
+### 9.6. Xác thực và Phân quyền
+
+- Các API GET có thể được truy cập mà không cần xác thực.
+- Các API POST, PUT, DELETE yêu cầu xác thực và quyền ADMIN.
+- Sử dụng Bearer token trong header cho các API cần xác thực:
+  ```
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+  ```
+
+### 9.7. Mã trạng thái HTTP
+
+| Mã | Mô tả |
+|-------------|-------------|
+| 200 | Thành công |
+| 201 | Tạo mới thành công |
+| 400 | Yêu cầu không hợp lệ |
+| 401 | Không có quyền truy cập |
+| 404 | Không tìm thấy |
+| 500 | Lỗi máy chủ |
+
+### 9.8. Xử lý lỗi
+
+Tất cả các phản hồi lỗi đều theo định dạng:
+```json
+{
+  "success": false,
+  "message": "Thông báo lỗi"
+}
+```
+
+Lỗi trùng lặp:
+```json
+{
+  "success": false,
+  "message": "Duplicate entry. This record already exists."
+}
+```
+
+Lỗi không tìm thấy:
+```json
+{
+  "success": false,
+  "message": "Not found"
+}
+```
 
 ## Troubleshooting: VNPay QR Endpoint (`/api/create-qr`)
 

@@ -19,7 +19,6 @@ export const createProduct = async (req, res) => {
       variants 
     } = req.body;
 
-    // Kiểm tra các trường bắt buộc
     if (!name || !brand || !category || !material || !description || !weight || !variants || variants.length === 0) {
       return res.status(400).json({
         success: false,
@@ -27,26 +26,46 @@ export const createProduct = async (req, res) => {
       });
     }
 
-    // Tìm hoặc tạo mới brand, category, material
+    // Xử lý vấn đề với mã sản phẩm 
+    // Xóa Counter collection để tránh lỗi duplicate key
+    try {
+      const Counter = mongoose.model('Counter');
+      await Counter.deleteOne({ _id: 'productId' });
+    } catch (error) {
+      console.log('Không tìm thấy Counter collection, tiếp tục tạo sản phẩm');
+    }
+
     const [brandDoc, categoryDoc, materialDoc] = await Promise.all([
-      Brand.findOneAndUpdate(
-        { name: brand },
-        { name: brand, status: 'HOAT_DONG' },
-        { upsert: true, new: true }
-      ),
-      Category.findOneAndUpdate(
-        { name: category },
-        { name: category, status: 'HOAT_DONG' },
-        { upsert: true, new: true }
-      ),
-      Material.findOneAndUpdate(
-        { name: material },
-        { name: material, status: 'HOAT_DONG' },
-        { upsert: true, new: true }
-      )
+      mongoose.Types.ObjectId.isValid(brand) 
+        ? Brand.findById(brand)
+        : Brand.findOne({ name: brand }),
+      mongoose.Types.ObjectId.isValid(category)
+        ? Category.findById(category)
+        : Category.findOne({ name: category }),
+      mongoose.Types.ObjectId.isValid(material)
+        ? Material.findById(material)
+        : Material.findOne({ name: material })
     ]);
 
-    // Xử lý variants
+    if (!brandDoc) {
+      return res.status(404).json({
+        success: false,
+        message: 'Thương hiệu không tồn tại'
+      });
+    }
+    if (!categoryDoc) {
+      return res.status(404).json({
+        success: false,
+        message: 'Danh mục không tồn tại'
+      });
+    }
+    if (!materialDoc) {
+      return res.status(404).json({
+        success: false,
+        message: 'Chất liệu không tồn tại'
+      });
+    }
+
     const processedVariants = [];
     for (const variant of variants) {
       if (!variant.colorId || !variant.sizeId || !variant.price || variant.price <= 0) {
@@ -57,26 +76,33 @@ export const createProduct = async (req, res) => {
         });
       }
 
-      // Tìm hoặc tạo mới color và size
-      const [color, size] = await Promise.all([
-        Color.findOneAndUpdate(
-          { code: variant.colorId },
-          { 
-            name: variant.colorId.charAt(0).toUpperCase() + variant.colorId.slice(1), 
-            code: variant.colorId,
-            status: 'HOAT_DONG'
-          },
-          { upsert: true, new: true }
-        ),
-        Size.findOneAndUpdate(
-          { value: parseInt(variant.sizeId.replace(/\D/g, '')) },
-          { 
-            value: parseInt(variant.sizeId.replace(/\D/g, '')),
-            status: 'HOAT_DONG'
-          },
-          { upsert: true, new: true }
-        )
-      ]);
+      let color, size;
+      
+      if (mongoose.Types.ObjectId.isValid(variant.colorId)) {
+        color = await Color.findById(variant.colorId);
+      } else {
+        color = await Color.findOne({ code: variant.colorId });
+      }
+      
+      if (!color) {
+        return res.status(404).json({
+          success: false,
+          message: `Không tìm thấy màu sắc: ${variant.colorId}`
+        });
+      }
+      
+      if (mongoose.Types.ObjectId.isValid(variant.sizeId)) {
+        size = await Size.findById(variant.sizeId);
+      } else {
+        size = await Size.findOne({ value: parseInt(variant.sizeId.replace(/\D/g, '')) });
+      }
+      
+      if (!size) {
+        return res.status(404).json({
+          success: false,
+          message: `Không tìm thấy kích cỡ: ${variant.sizeId}`
+        });
+      }
 
       processedVariants.push({
         ...variant,
@@ -85,8 +111,20 @@ export const createProduct = async (req, res) => {
       });
     }
 
-    // Tạo sản phẩm mới
+    const latestProduct = await Product.findOne().sort({ createdAt: -1 });
+    let productNumber = 1;
+    
+    if (latestProduct && latestProduct.code) {
+      const match = latestProduct.code.match(/PRD(\d+)/);
+      if (match && match[1]) {
+        productNumber = parseInt(match[1]) + 1;
+      }
+    }
+    
+    const productCode = `PRD${productNumber.toString().padStart(6, '0')}`;
+
     const newProduct = new Product({
+      code: productCode,
       name,
       brand: brandDoc._id,
       category: categoryDoc._id,
@@ -99,7 +137,6 @@ export const createProduct = async (req, res) => {
 
     await newProduct.save();
 
-    // Populate thông tin chi tiết trước khi trả về
     await newProduct.populate([
       { path: 'brand', select: 'name' },
       { path: 'category', select: 'name' },
@@ -312,27 +349,15 @@ export const updateProduct = async (req, res) => {
 
     if (brand && !mongoose.Types.ObjectId.isValid(brand)) {
       // Nếu là tên, tìm hoặc tạo mới
-      const brandDoc = await Brand.findOneAndUpdate(
-        { name: brand },
-        { name: brand, status: 'HOAT_DONG' },
-        { upsert: true, new: true }
-      );
+      const brandDoc = await Brand.findOne({ name: brand });
       brandId = brandDoc._id;
     }
     if (category && !mongoose.Types.ObjectId.isValid(category)) {
-      const categoryDoc = await Category.findOneAndUpdate(
-        { name: category },
-        { name: category, status: 'HOAT_DONG' },
-        { upsert: true, new: true }
-      );
+      const categoryDoc = await Category.findOne({ name: category });
       categoryId = categoryDoc._id;
     }
     if (material && !mongoose.Types.ObjectId.isValid(material)) {
-      const materialDoc = await Material.findOneAndUpdate(
-        { name: material },
-        { name: material, status: 'HOAT_DONG' },
-        { upsert: true, new: true }
-      );
+      const materialDoc = await Material.findOne({ name: material });
       materialId = materialDoc._id;
     }
 

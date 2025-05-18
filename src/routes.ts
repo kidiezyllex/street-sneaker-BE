@@ -18,6 +18,7 @@ import productRoutes from './routes/product.routes.js';
 import promotionRoutes from './routes/promotion.routes.js';
 import returnRoutes from './routes/return.routes.js';
 import vnpayRoutes from './routes/vnpay.routes.js';
+import attributeRoutes from './routes/attribute.routes.js';
 
 const router = Router();
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -45,6 +46,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     app.use("/api/promotions", promotionRoutes);
     app.use("/api/returns", returnRoutes);
     app.use("/api/vnpay", vnpayRoutes);
+    app.use("/api/attributes", attributeRoutes);
     
     app.get("/api/health", (req: Request, res: Response) => {
       res.status(200).json({ 

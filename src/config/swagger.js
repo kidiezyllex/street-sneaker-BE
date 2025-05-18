@@ -47,6 +47,26 @@ const options = {
         name: 'VNPay',
         description: 'Các API liên quan đến thanh toán qua VNPay',
       },
+      {
+        name: 'Brands',
+        description: 'Các API liên quan đến quản lý thương hiệu',
+      },
+      {
+        name: 'Categories',
+        description: 'Các API liên quan đến quản lý danh mục sản phẩm',
+      },
+      {
+        name: 'Materials',
+        description: 'Các API liên quan đến quản lý vật liệu',
+      },
+      {
+        name: 'Colors',
+        description: 'Các API liên quan đến quản lý màu sắc',
+      },
+      {
+        name: 'Sizes',
+        description: 'Các API liên quan đến quản lý kích thước',
+      },
     ],
   },
   // Paths to the API docs

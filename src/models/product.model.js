@@ -1,5 +1,12 @@
 import mongoose from 'mongoose';
 
+const counterSchema = new mongoose.Schema({
+  _id: { type: String, required: true },
+  sequence_value: { type: Number, default: 0 }
+});
+
+const Counter = mongoose.model('Counter', counterSchema);
+
 const productSchema = new mongoose.Schema({
   code: {
     type: String,
@@ -32,7 +39,7 @@ const productSchema = new mongoose.Schema({
   },
   weight: {
     type: Number,
-    required: true // Weight in grams
+    required: true
   },
   variants: [{
     colorId: {
@@ -66,12 +73,18 @@ const productSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Tạo code tự động
-productSchema.pre('save', async function(next) {
+productSchema.index({ name: 1 }, { unique: false });
+
+productSchema.pre('save', async function (next) {
   try {
     if (this.isNew && !this.code) {
-      const count = await mongoose.models.Product.countDocuments();
-      this.code = `PRD${(count + 1).toString().padStart(6, '0')}`;
+      const counter = await Counter.findOneAndUpdate(
+        { _id: 'productId' },
+        { $inc: { sequence_value: 1 } },
+        { new: true, upsert: true }
+      );
+
+      this.code = `PRD${counter.sequence_value.toString().padStart(6, '0')}`;
     }
     next();
   } catch (error) {

@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import Account from '../models/account.model.js';
+import { jwtSecret } from '../config/database.js';
 
 /**
  * Đăng nhập
@@ -40,7 +41,7 @@ export const login = async (req, res) => {
     // Tạo token
     const token = jwt.sign(
       { id: account._id, role: account.role },
-      process.env.JWT_SECRET,
+      jwtSecret,
       { expiresIn: '24h' }
     );
 
@@ -112,7 +113,7 @@ export const register = async (req, res) => {
     // Tạo token
     const token = jwt.sign(
       { id: newAccount._id, role: newAccount.role },
-      process.env.JWT_SECRET,
+      jwtSecret,
       { expiresIn: '24h' }
     );
 

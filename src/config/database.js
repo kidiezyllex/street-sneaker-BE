@@ -1,20 +1,9 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-
-// Load environment variables
 dotenv.config();
-
-// Database connection string from environment variables
-// export const mongoURI = process.env.MONGODB_URI;
 export const mongoURI = "mongodb+srv://kidiezyllex:kidiezyllex.1111@cluster0.dm3rgls.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
-
-// JWT configuration
-export const jwtSecret = process.env.JWT_SECRET;
-export const jwtExpiresIn = process.env.JWT_EXPIRES_IN;
-
-/**
- * Connect to MongoDB
- */
+export const jwtSecret = "kidiezyllex.1111";
+export const jwtExpiresIn = process.env.JWT_EXPIRES_IN || "24h";
 export const connectDB = async () => {
   try {
     const conn = await mongoose.connect(mongoURI);
@@ -36,5 +25,4 @@ export const disconnectDB = async () => {
 
 mongoose.set('strictQuery', true);
 
-// Export mongoose instance
 export default mongoose; 

@@ -1,20 +1,18 @@
 import { v2 as cloudinary } from 'cloudinary';
 import { Readable } from 'stream';
 
-// Cấu hình Cloudinary từ biến môi trường
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
+  cloud_name: 'drqbhj6ft',
+  api_key: '191952193821284',
+  api_secret: '23tR5d5GDWA6hycDzydv6zs_HNU'
 });
 
 /**
- * Upload file lên Cloudinary
- * @param {Buffer} fileBuffer - Buffer của file
- * @param {string} fileName - Tên file (sẽ được sử dụng để tạo public_id)
- * @param {string} folderPath - Đường dẫn thư mục trên Cloudinary
- * @param {string} resourceType - Loại tài nguyên (image, video, raw, auto)
- * @returns {Promise<Object>} Kết quả upload
+ * @param {Buffer} fileBuffer 
+ * @param {string} fileName 
+ * @param {string} folderPath 
+ * @param {string} resourceType 
+ * @returns {Promise<Object>} 
  */
 export const uploadFileToCloudinary = async (
   fileBuffer,
@@ -23,15 +21,12 @@ export const uploadFileToCloudinary = async (
   resourceType = 'auto'
 ) => {
   try {
-    // Tạo public_id từ fileName và folderPath
     const publicId = `${folderPath}/${fileName.split('.')[0]}`;
-    
-    // Tạo stream từ buffer
+        
     const bufferStream = new Readable();
     bufferStream.push(fileBuffer);
     bufferStream.push(null);
     
-    // Upload lên Cloudinary sử dụng stream
     return new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {

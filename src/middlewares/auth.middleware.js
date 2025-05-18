@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import Account from '../models/account.model.js';
 import dotenv from 'dotenv';
-import config from '../config/config.js';
+import { jwtSecret } from '../config/database.js';
 
 dotenv.config();
 
@@ -29,7 +29,7 @@ export const authenticate = async (req, res, next) => {
     
     // Xác thực token
     try {
-      const decoded = jwt.verify(token, config.jwtSecret);
+      const decoded = jwt.verify(token, jwtSecret);
     
       // Tìm người dùng từ token
       const account = await Account.findById(decoded.id).select('-password');
@@ -111,7 +111,7 @@ export const protect = async (req, res, next) => {
     }
     
     // Xác thực token
-    const decoded = jwt.verify(token, config.jwtSecret);
+    const decoded = jwt.verify(token, jwtSecret);
     
     // Tìm người dùng từ token với thông tin đầy đủ
     const currentAccount = await Account.findById(decoded.id).select('-password');
