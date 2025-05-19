@@ -7,7 +7,7 @@ const orderSchema = new mongoose.Schema({
     trim: true,
   },
   customer: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: String,
     ref: 'Account',
     required: true
   },
@@ -41,7 +41,7 @@ const orderSchema = new mongoose.Schema({
     }
   }],
   voucher: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: String,
     ref: 'Voucher'
   },
   subTotal: {

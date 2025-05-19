@@ -501,18 +501,17 @@ export const getOrdersByUserId = async (req, res) => {
 export const createPOSOrder = async (req, res) => {
   try {
     const {
-      orderId, // Required for POS
-      customer, // Can be a name string for POS, or a customer ID
+      orderId,
+      customer,
       items,
       voucher,
       subTotal,
       total,
-      shippingAddress, // Optional, will be defaulted for POS
+      shippingAddress,
       paymentMethod,
       discount,
     } = req.body;
 
-    // Validate required fields for POS
     if (!orderId || !items || !subTotal || !total || !paymentMethod) {
       return res.status(400).json({
         success: false,
@@ -520,9 +519,8 @@ export const createPOSOrder = async (req, res) => {
       });
     }
     
-    // Default shipping address for POS if not provided or partially provided
     const finalShippingAddress = {
-      name: shippingAddress?.name || customer || 'Khách lẻ', // Use customer name or "Khách lẻ"
+      name: shippingAddress?.name || customer || 'Khách lẻ',
       phoneNumber: shippingAddress?.phoneNumber || 'N/A',
       provinceId: shippingAddress?.provinceId || 'N/A',
       districtId: shippingAddress?.districtId || 'N/A',
@@ -532,10 +530,8 @@ export const createPOSOrder = async (req, res) => {
 
     const newOrder = new Order({
       code: orderId,
-      customer, // This might need adjustment if 'customer' is just a name string.
-                // Assuming Order model can handle a string or ObjectId for customer,
-                // or it's an ObjectId of a "Guest Customer" record.
-      staff: req.account ? req.account._id : undefined, // Assuming staff is logged in
+      customer, 
+      staff: req.account ? req.account._id : undefined,
       items,
       voucher,
       subTotal,
@@ -543,17 +539,15 @@ export const createPOSOrder = async (req, res) => {
       total,
       shippingAddress: finalShippingAddress,
       paymentMethod,
-      paymentStatus: 'PAID', // POS orders are typically paid immediately
-      orderStatus: 'HOAN_THANH' // POS orders are typically completed immediately
+      paymentStatus: 'PAID',
+      orderStatus: 'HOAN_THANH'
     });
 
     await newOrder.save();
 
-    // Populate thông tin để trả về
     const populatedOrder = await Order.findById(newOrder._id)
-      .populate('customer', 'fullName email phoneNumber') // This populate might fail if customer is a string
       .populate('staff', 'fullName')
-      .populate('voucher')
+      .populate(newOrder.voucher ? 'voucher' : null)
       .populate({
         path: 'items.product',
         select: 'name code imageUrl'
