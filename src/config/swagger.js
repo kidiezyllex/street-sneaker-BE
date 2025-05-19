@@ -1,7 +1,6 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 
-// Swagger configuration options
 const options = {
   definition: {
     openapi: '3.0.0',
@@ -69,7 +68,6 @@ const options = {
       },
     ],
   },
-  // Paths to the API docs
   apis: [
     './src/routes/*.ts',
     './src/routes/*.js',
@@ -81,7 +79,6 @@ const options = {
   ],
 };
 
-// Initialize swagger-jsdoc
 const specs = swaggerJsdoc(options);
 
 /**
@@ -89,7 +86,6 @@ const specs = swaggerJsdoc(options);
  * @param app Express application
  */
 export const setupSwagger = (app) => {
-  // Serve swagger docs - both with and without trailing slash
   app.use('/api-docs', swaggerUi.serve);
   app.get('/api-docs', swaggerUi.setup(specs, {
     explorer: true,
@@ -104,7 +100,6 @@ export const setupSwagger = (app) => {
     customSiteTitle: 'street-sneaker BE API Documentation',
   }));
 
-  // Serve swagger spec as JSON
   app.get('/swagger.json', (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     res.send(specs);

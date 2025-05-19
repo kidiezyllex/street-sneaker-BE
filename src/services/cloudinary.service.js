@@ -54,7 +54,6 @@ export const uploadFileToCloudinary = async (
       bufferStream.pipe(uploadStream);
     });
   } catch (error) {
-    console.error('Lỗi khi upload file lên Cloudinary:', error);
     throw error;
   }
 };
@@ -76,7 +75,6 @@ export const deleteFileFromCloudinary = async (publicId, resourceType = 'auto') 
       result
     };
   } catch (error) {
-    console.error('Lỗi khi xóa file từ Cloudinary:', error);
     throw error;
   }
 };

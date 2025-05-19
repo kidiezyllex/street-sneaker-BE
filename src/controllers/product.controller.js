@@ -25,14 +25,11 @@ export const createProduct = async (req, res) => {
         message: 'Vui lòng cung cấp đầy đủ thông tin sản phẩm'
       });
     }
-
-    // Xử lý vấn đề với mã sản phẩm 
-    // Xóa Counter collection để tránh lỗi duplicate key
     try {
       const Counter = mongoose.model('Counter');
       await Counter.deleteOne({ _id: 'productId' });
     } catch (error) {
-      console.log('Không tìm thấy Counter collection, tiếp tục tạo sản phẩm');
+      console.error(error);
     }
 
     const [brandDoc, categoryDoc, materialDoc] = await Promise.all([
@@ -151,7 +148,6 @@ export const createProduct = async (req, res) => {
       data: newProduct
     });
   } catch (error) {
-    console.error('Lỗi khi tạo sản phẩm:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi tạo sản phẩm',
@@ -183,14 +179,12 @@ export const getProducts = async (req, res) => {
     
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
-    // Xây dựng query filter
     const filter = {};
     
     if (name) {
       filter.name = { $regex: name, $options: 'i' };
     }
     
-    // Lọc theo thương hiệu (hỗ trợ nhiều thương hiệu)
     if (brand) {
       if (Array.isArray(brand)) {
         filter.brand = { $in: brand };
@@ -199,7 +193,6 @@ export const getProducts = async (req, res) => {
       }
     }
     
-    // Lọc theo danh mục (hỗ trợ nhiều danh mục)
     if (category) {
       if (Array.isArray(category)) {
         filter.category = { $in: category };
@@ -216,26 +209,21 @@ export const getProducts = async (req, res) => {
       filter.status = status;
     }
     
-    // Lọc theo màu sắc
     if (color) {
       const colorIds = Array.isArray(color) ? color : [color];
       filter['variants.colorId'] = { $in: colorIds };
     }
     
-    // Lọc theo kích cỡ
     if (size) {
       const sizeIds = Array.isArray(size) ? size : [size];
       filter['variants.sizeId'] = { $in: sizeIds };
     }
     
-    // Lọc theo khoảng giá
     if (minPrice || maxPrice) {
       filter['variants.price'] = {};
       if (minPrice) filter['variants.price'].$gte = parseFloat(minPrice);
       if (maxPrice) filter['variants.price'].$lte = parseFloat(maxPrice);
     }
-    
-    // Thực hiện query với phân trang
     const total = await Product.countDocuments(filter);
     const products = await Product.find(filter)
       .populate('brand', 'name')
@@ -247,7 +235,6 @@ export const getProducts = async (req, res) => {
       .skip(skip)
       .limit(parseInt(limit));
     
-    // Trả về kết quả
     return res.status(200).json({
       success: true,
       message: 'Lấy danh sách sản phẩm thành công',
@@ -262,7 +249,6 @@ export const getProducts = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Lỗi khi lấy danh sách sản phẩm:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi lấy danh sách sản phẩm',
@@ -307,7 +293,6 @@ export const getProductById = async (req, res) => {
       data: product
     });
   } catch (error) {
-    console.error('Lỗi khi lấy chi tiết sản phẩm:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi lấy thông tin sản phẩm',
@@ -342,13 +327,11 @@ export const updateProduct = async (req, res) => {
       });
     }
 
-    // Xử lý brand, category, material: cho phép truyền ObjectId hoặc tên
     let brandId = brand;
     let categoryId = category;
     let materialId = material;
 
     if (brand && !mongoose.Types.ObjectId.isValid(brand)) {
-      // Nếu là tên, tìm hoặc tạo mới
       const brandDoc = await Brand.findOne({ name: brand });
       brandId = brandDoc._id;
     }
@@ -361,7 +344,6 @@ export const updateProduct = async (req, res) => {
       materialId = materialDoc._id;
     }
 
-    // Kiểm tra từng variant nếu được cung cấp
     if (variants && variants.length > 0) {
       for (const variant of variants) {
         if (variant.colorId && !mongoose.Types.ObjectId.isValid(variant.colorId)) {
@@ -385,7 +367,6 @@ export const updateProduct = async (req, res) => {
       }
     }
 
-    // Tìm sản phẩm cần cập nhật
     const product = await Product.findById(id);
     if (!product) {
       return res.status(404).json({
@@ -394,7 +375,6 @@ export const updateProduct = async (req, res) => {
       });
     }
 
-    // Cập nhật thông tin
     if (name) product.name = name;
     if (brandId) product.brand = brandId;
     if (categoryId) product.category = categoryId;
@@ -405,7 +385,6 @@ export const updateProduct = async (req, res) => {
     if (status) product.status = status;
 
     await product.save();
-    // Populate thông tin chi tiết trước khi trả về
     await product.populate([
       { path: 'brand', select: 'name' },
       { path: 'category', select: 'name' },
@@ -420,7 +399,6 @@ export const updateProduct = async (req, res) => {
       data: product
     });
   } catch (error) {
-    console.error('Lỗi khi cập nhật sản phẩm:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi cập nhật sản phẩm',
@@ -459,7 +437,6 @@ export const deleteProduct = async (req, res) => {
       message: 'Xóa sản phẩm thành công'
     });
   } catch (error) {
-    console.error('Lỗi khi xóa sản phẩm:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi xóa sản phẩm',
@@ -510,7 +487,6 @@ export const updateProductStatus = async (req, res) => {
       data: product
     });
   } catch (error) {
-    console.error('Lỗi khi cập nhật trạng thái sản phẩm:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi cập nhật trạng thái sản phẩm',
@@ -552,7 +528,6 @@ export const updateProductStock = async (req, res) => {
       });
     }
     
-    // Cập nhật tồn kho từng biến thể
     for (const update of variantUpdates) {
       const { variantId, stock } = update;
       
@@ -583,7 +558,6 @@ export const updateProductStock = async (req, res) => {
       data: product
     });
   } catch (error) {
-    console.error('Lỗi khi cập nhật tồn kho:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi cập nhật tồn kho',
@@ -621,7 +595,6 @@ export const searchProducts = async (req, res) => {
     
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
-    // Tìm kiếm sản phẩm theo tên hoặc mã
     const filter = {
       $or: [
         { name: { $regex: keyword, $options: 'i' } },
@@ -630,9 +603,6 @@ export const searchProducts = async (req, res) => {
       status: 'HOAT_DONG'
     };
     
-    // Áp dụng các bộ lọc nâng cao
-    
-    // Lọc theo thương hiệu
     if (brand) {
       if (Array.isArray(brand)) {
         filter.brand = { $in: brand };
@@ -641,7 +611,6 @@ export const searchProducts = async (req, res) => {
       }
     }
     
-    // Lọc theo danh mục
     if (category) {
       if (Array.isArray(category)) {
         filter.category = { $in: category };
@@ -650,24 +619,20 @@ export const searchProducts = async (req, res) => {
       }
     }
     
-    // Lọc theo chất liệu
     if (material) {
       filter.material = material;
     }
     
-    // Lọc theo màu sắc
     if (color) {
       const colorIds = Array.isArray(color) ? color : [color];
       filter['variants.colorId'] = { $in: colorIds };
     }
     
-    // Lọc theo kích cỡ
     if (size) {
       const sizeIds = Array.isArray(size) ? size : [size];
       filter['variants.sizeId'] = { $in: sizeIds };
     }
     
-    // Lọc theo khoảng giá
     if (minPrice || maxPrice) {
       filter['variants.price'] = {};
       if (minPrice) filter['variants.price'].$gte = parseFloat(minPrice);
@@ -699,7 +664,6 @@ export const searchProducts = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Lỗi khi tìm kiếm sản phẩm:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi tìm kiếm sản phẩm',
@@ -760,7 +724,6 @@ export const updateProductImages = async (req, res) => {
       data: product
     });
   } catch (error) {
-    console.error('Lỗi khi cập nhật hình ảnh:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi cập nhật hình ảnh',
@@ -784,7 +747,6 @@ export const getAllFilters = async (req, res) => {
       Size.find({ status: 'HOAT_DONG' }).select('_id value').sort({ value: 1 })
     ]);
 
-    // Xác định khoảng giá
     const productWithMinPrice = await Product.findOne({ status: 'HOAT_DONG' })
       .sort({ 'variants.price': 1 })
       .select('variants.price');
@@ -793,7 +755,6 @@ export const getAllFilters = async (req, res) => {
       .sort({ 'variants.price': -1 })
       .select('variants.price');
     
-    // Lấy giá thấp nhất và cao nhất
     const minProductPrice = productWithMinPrice?.variants[0]?.price || 0;
     const maxProductPrice = productWithMaxPrice?.variants[0]?.price || 1000000;
 
@@ -813,7 +774,6 @@ export const getAllFilters = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Lỗi khi lấy danh sách bộ lọc:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi lấy danh sách bộ lọc',

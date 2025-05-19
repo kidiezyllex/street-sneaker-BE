@@ -48,7 +48,6 @@ export const createQR = async (req, res) => {
       txnRef
     });
   } catch (error) {
-    console.error('VNPay createQR error:', error);
     return res.status(500).json({
       success: false,
       message: 'Internal server error',
@@ -84,7 +83,6 @@ export const checkPayment = async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('VNPay checkPayment error:', error);
     return res.status(500).json({
       success: false,
       message: 'Internal server error',

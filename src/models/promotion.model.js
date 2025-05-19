@@ -38,7 +38,6 @@ const promotionSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Tạo code tự động
 promotionSchema.pre('save', async function(next) {
   try {
     if (this.isNew && !this.code) {

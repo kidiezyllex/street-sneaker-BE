@@ -1,47 +1,38 @@
 import multer from 'multer';
 
-// Cấu hình lưu trữ file trong memory để xử lý trước khi upload lên Cloudinary
 const storage = multer.memoryStorage();
 
-// Cấu hình giới hạn file
 const fileFilter = (req, file, cb) => {
-  // Kiểm tra loại file được phép upload
   const allowedMimeTypes = [
-    // Documents
     'application/pdf',
     'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // docx
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'application/vnd.ms-excel',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // xlsx
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     'application/vnd.ms-powerpoint',
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation', // pptx
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
     'text/plain',
     'text/csv',
     
-    // Images
     'image/jpeg',
     'image/png',
     'image/gif',
     'image/svg+xml',
     'image/webp',
     
-    // Videos
     'video/mp4',
     'video/mpeg',
     'video/quicktime',
     'video/webm',
     
-    // Audio
     'audio/mpeg',
     'audio/wav',
     'audio/ogg',
     
-    // Archives
     'application/zip',
     'application/x-rar-compressed',
     'application/x-7z-compressed',
     
-    // Others
     'application/json',
     'text/markdown'
   ];
@@ -53,16 +44,14 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Khởi tạo multer với cấu hình
 const upload = multer({
   storage,
   limits: {
-    fileSize: 50 * 1024 * 1024, // Giới hạn 50MB
+    fileSize: 50 * 1024 * 1024,
   },
   fileFilter
 });
 
-// Middleware xử lý lỗi của multer
 export const handleUploadError = (err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {

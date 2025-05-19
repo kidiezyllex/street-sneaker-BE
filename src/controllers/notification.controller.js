@@ -11,7 +11,6 @@ export const createNotification = async (req, res) => {
   try {
     const { type, title, content, recipients, relatedTo, relatedId } = req.body;
 
-    // Kiểm tra các trường bắt buộc
     if (!type || !title || !content || !relatedTo || !relatedId) {
       return res.status(400).json({
         success: false,
@@ -19,7 +18,6 @@ export const createNotification = async (req, res) => {
       });
     }
 
-    // Kiểm tra relatedId có phải là ObjectId hợp lệ
     if (!mongoose.Types.ObjectId.isValid(relatedId)) {
       return res.status(400).json({
         success: false,
@@ -27,7 +25,6 @@ export const createNotification = async (req, res) => {
       });
     }
 
-    // Tạo thông báo mới
     const newNotification = new Notification({
       type,
       title,
@@ -46,7 +43,6 @@ export const createNotification = async (req, res) => {
       data: newNotification
     });
   } catch (error) {
-    console.error('Lỗi khi tạo thông báo:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi tạo thông báo',
@@ -65,7 +61,6 @@ export const getNotifications = async (req, res) => {
     const { type, status, relatedTo, page = 1, limit = 10 } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
-    // Xây dựng query filter
     const filter = {};
     
     if (type) {
@@ -80,7 +75,6 @@ export const getNotifications = async (req, res) => {
       filter.relatedTo = relatedTo;
     }
     
-    // Thực hiện query với phân trang
     const total = await Notification.countDocuments(filter);
     const notifications = await Notification.find(filter)
       .populate('recipients', 'fullName email')
@@ -88,7 +82,6 @@ export const getNotifications = async (req, res) => {
       .skip(skip)
       .limit(parseInt(limit));
     
-    // Trả về kết quả
     return res.status(200).json({
       success: true,
       message: 'Lấy danh sách thông báo thành công',
@@ -103,7 +96,6 @@ export const getNotifications = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Lỗi khi lấy danh sách thông báo:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi lấy danh sách thông báo',
@@ -144,7 +136,6 @@ export const getNotificationById = async (req, res) => {
       data: notification
     });
   } catch (error) {
-    console.error('Lỗi khi lấy chi tiết thông báo:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi lấy thông tin thông báo',
@@ -170,7 +161,6 @@ export const updateNotification = async (req, res) => {
       });
     }
     
-    // Tìm thông báo cần cập nhật
     const notification = await Notification.findById(id);
     
     if (!notification) {
@@ -180,7 +170,6 @@ export const updateNotification = async (req, res) => {
       });
     }
     
-    // Cập nhật thông tin
     if (title) notification.title = title;
     if (content) notification.content = content;
     if (recipients) notification.recipients = recipients;
@@ -194,7 +183,6 @@ export const updateNotification = async (req, res) => {
       data: notification
     });
   } catch (error) {
-    console.error('Lỗi khi cập nhật thông báo:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi cập nhật thông báo',
@@ -233,7 +221,6 @@ export const deleteNotification = async (req, res) => {
       message: 'Xóa thông báo thành công'
     });
   } catch (error) {
-    console.error('Lỗi khi xóa thông báo:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi xóa thông báo',
@@ -268,12 +255,8 @@ export const sendNotification = async (req, res) => {
       });
     }
     
-    // Cập nhật trạng thái thành 'SENT'
     notification.status = 'SENT';
     await notification.save();
-    
-    // TODO: Thực hiện gửi email hoặc thông báo hệ thống tùy theo type
-    // Trong thực tế, bạn sẽ cần thêm service để gửi email hoặc push notification
     
     return res.status(200).json({
       success: true,
@@ -281,7 +264,6 @@ export const sendNotification = async (req, res) => {
       data: notification
     });
   } catch (error) {
-    console.error('Lỗi khi gửi thông báo:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi gửi thông báo',
@@ -301,7 +283,6 @@ export const getUserNotifications = async (req, res) => {
     const { page = 1, limit = 10 } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
-    // Tìm các thông báo mà người dùng là người nhận
     const total = await Notification.countDocuments({ 
       recipients: userId,
       status: 'SENT'
@@ -329,7 +310,6 @@ export const getUserNotifications = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Lỗi khi lấy thông báo người dùng:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi lấy thông báo',
@@ -347,7 +327,6 @@ export const sendNotificationToAllCustomers = async (req, res) => {
   try {
     const { title, content, type, relatedTo, relatedId } = req.body;
     
-    // Kiểm tra các trường bắt buộc
     if (!type || !title || !content || !relatedTo || !relatedId) {
       return res.status(400).json({
         success: false,
@@ -355,7 +334,6 @@ export const sendNotificationToAllCustomers = async (req, res) => {
       });
     }
     
-    // Kiểm tra relatedId có phải là ObjectId hợp lệ
     if (!mongoose.Types.ObjectId.isValid(relatedId)) {
       return res.status(400).json({
         success: false,
@@ -363,11 +341,9 @@ export const sendNotificationToAllCustomers = async (req, res) => {
       });
     }
     
-    // Lấy tất cả tài khoản khách hàng
     const customers = await Account.find({ role: 'CUSTOMER' }).select('_id');
     const customerIds = customers.map(customer => customer._id);
     
-    // Tạo thông báo mới
     const newNotification = new Notification({
       type,
       title,
@@ -386,7 +362,6 @@ export const sendNotificationToAllCustomers = async (req, res) => {
       data: newNotification
     });
   } catch (error) {
-    console.error('Lỗi khi tạo thông báo:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi tạo thông báo',

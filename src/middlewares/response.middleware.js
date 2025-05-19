@@ -10,15 +10,10 @@
  */
 
 const responseMiddleware = (req, res, next) => {
-  // Lưu trữ phương thức json gốc
   const originalJson = res.json;
-  
-  // Ghi đè phương thức json
   res.json = function(obj) {
     let statusCode = res.statusCode || 200;
     let isSuccess = statusCode < 400;
-    
-    // Chuẩn hóa response
     const standardResponse = {
       status: Object.prototype.hasOwnProperty.call(obj, 'success') ? obj.success : isSuccess,
       message: obj.message || (isSuccess ? 'Success' : 'Error'),
@@ -27,7 +22,6 @@ const responseMiddleware = (req, res, next) => {
       timestamp: new Date()
     };
     
-    // Gọi phương thức json gốc với response đã chuẩn hóa
     return originalJson.call(this, standardResponse);
   };
   

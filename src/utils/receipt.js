@@ -53,7 +53,6 @@ export const generateReceipt = async (order) => {
 
     return receipt;
   } catch (error) {
-    console.error('Error generating receipt:', error);
     throw new Error('Không thể tạo hóa đơn');
   }
 }; 

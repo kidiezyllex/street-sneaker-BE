@@ -44,7 +44,6 @@ const paymentSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Tạo code tự động
 paymentSchema.pre('save', async function(next) {
   try {
     if (this.isNew && !this.code) {

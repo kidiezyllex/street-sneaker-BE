@@ -3,17 +3,11 @@ import Order from '../models/order.model.js';
 import Product from '../models/product.model.js';
 import mongoose from 'mongoose';
 
-/**
- * Tạo đơn trả hàng mới
- * @route POST /api/returns
- * @access Private/Admin
- */
 export const createReturn = async (req, res) => {
   try {
     const { originalOrder, customer, items, totalRefund } = req.body;
     const staff = req.account._id;
 
-    // Kiểm tra các trường bắt buộc
     if (!originalOrder || !customer || !items || items.length === 0 || !totalRefund) {
       return res.status(400).json({
         success: false,
@@ -21,7 +15,6 @@ export const createReturn = async (req, res) => {
       });
     }
 
-    // Kiểm tra ID đơn hàng gốc có hợp lệ không
     if (!mongoose.Types.ObjectId.isValid(originalOrder)) {
       return res.status(400).json({
         success: false,
@@ -29,7 +22,6 @@ export const createReturn = async (req, res) => {
       });
     }
 
-    // Kiểm tra ID khách hàng có hợp lệ không
     if (!mongoose.Types.ObjectId.isValid(customer)) {
       return res.status(400).json({
         success: false,
@@ -37,7 +29,6 @@ export const createReturn = async (req, res) => {
       });
     }
 
-    // Kiểm tra đơn hàng gốc có tồn tại không
     const orderExists = await Order.findById(originalOrder);
     if (!orderExists) {
       return res.status(404).json({
@@ -46,7 +37,6 @@ export const createReturn = async (req, res) => {
       });
     }
 
-    // Kiểm tra trạng thái đơn hàng (chỉ được trả đơn hàng đã hoàn thành)
     if (orderExists.status !== 'HOAN_THANH') {
       return res.status(400).json({
         success: false,
@@ -54,7 +44,6 @@ export const createReturn = async (req, res) => {
       });
     }
 
-    // Kiểm tra các sản phẩm trả có trong đơn hàng gốc không
     for (const item of items) {
       if (!mongoose.Types.ObjectId.isValid(item.product)) {
         return res.status(400).json({
@@ -63,7 +52,6 @@ export const createReturn = async (req, res) => {
         });
       }
 
-      // Tìm sản phẩm trong đơn hàng gốc
       const orderItem = orderExists.items.find(
         oi => oi.product.toString() === item.product.toString() && 
         oi.variant.colorId.toString() === item.variant.colorId.toString() && 
@@ -77,7 +65,6 @@ export const createReturn = async (req, res) => {
         });
       }
 
-      // Kiểm tra số lượng trả không vượt quá số lượng trong đơn hàng
       if (item.quantity > orderItem.quantity) {
         return res.status(400).json({
           success: false,
@@ -86,7 +73,6 @@ export const createReturn = async (req, res) => {
       }
     }
 
-    // Tạo đơn trả hàng mới
     const newReturn = new Return({
       originalOrder,
       customer,
@@ -104,7 +90,6 @@ export const createReturn = async (req, res) => {
       data: newReturn
     });
   } catch (error) {
-    console.error('Lỗi khi tạo đơn trả hàng:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi tạo đơn trả hàng',
@@ -113,17 +98,11 @@ export const createReturn = async (req, res) => {
   }
 };
 
-/**
- * Lấy danh sách đơn trả hàng
- * @route GET /api/returns
- * @access Private/Admin
- */
 export const getReturns = async (req, res) => {
   try {
     const { status, customer, page = 1, limit = 10 } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
-    // Xây dựng query filter
     const filter = {};
     
     if (status) {
@@ -134,7 +113,6 @@ export const getReturns = async (req, res) => {
       filter.customer = customer;
     }
     
-    // Thực hiện query với phân trang
     const total = await Return.countDocuments(filter);
     const returns = await Return.find(filter)
       .populate('customer', 'fullName email phoneNumber')
@@ -148,7 +126,6 @@ export const getReturns = async (req, res) => {
       .skip(skip)
       .limit(parseInt(limit));
     
-    // Trả về kết quả
     return res.status(200).json({
       success: true,
       message: 'Lấy danh sách đơn trả hàng thành công',
@@ -163,7 +140,6 @@ export const getReturns = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Lỗi khi lấy danh sách đơn trả hàng:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi lấy danh sách đơn trả hàng',
@@ -172,11 +148,6 @@ export const getReturns = async (req, res) => {
   }
 };
 
-/**
- * Lấy chi tiết đơn trả hàng
- * @route GET /api/returns/:id
- * @access Private/Admin
- */
 export const getReturnById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -210,7 +181,6 @@ export const getReturnById = async (req, res) => {
       data: returnOrder
     });
   } catch (error) {
-    console.error('Lỗi khi lấy chi tiết đơn trả hàng:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi lấy thông tin đơn trả hàng',
@@ -219,11 +189,6 @@ export const getReturnById = async (req, res) => {
   }
 };
 
-/**
- * Cập nhật trạng thái đơn trả hàng
- * @route PUT /api/returns/:id/status
- * @access Private/Admin
- */
 export const updateReturnStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -243,7 +208,6 @@ export const updateReturnStatus = async (req, res) => {
       });
     }
     
-    // Tìm đơn trả hàng cần cập nhật
     const returnOrder = await Return.findById(id);
     
     if (!returnOrder) {
@@ -253,7 +217,6 @@ export const updateReturnStatus = async (req, res) => {
       });
     }
     
-    // Nếu đơn hàng đã hoàn tiền hoặc đã hủy thì không được thay đổi trạng thái nữa
     if (returnOrder.status === 'DA_HOAN_TIEN' || returnOrder.status === 'DA_HUY') {
       return res.status(400).json({
         success: false,
@@ -261,24 +224,19 @@ export const updateReturnStatus = async (req, res) => {
       });
     }
     
-    // Cập nhật trạng thái
     returnOrder.status = status;
     
-    // Nếu đơn hàng được cập nhật thành "Đã hoàn tiền", cập nhật lại số lượng tồn kho
     if (status === 'DA_HOAN_TIEN') {
-      // Cập nhật lại tồn kho
       for (const item of returnOrder.items) {
         const product = await Product.findById(item.product);
         
         if (product) {
-          // Tìm variant tương ứng
           const variantIndex = product.variants.findIndex(
             v => v.colorId.toString() === item.variant.colorId.toString() && 
             v.sizeId.toString() === item.variant.sizeId.toString()
           );
           
           if (variantIndex !== -1) {
-            // Cộng lại số lượng vào tồn kho
             product.variants[variantIndex].quantity += item.quantity;
             await product.save();
           }
@@ -294,7 +252,6 @@ export const updateReturnStatus = async (req, res) => {
       data: returnOrder
     });
   } catch (error) {
-    console.error('Lỗi khi cập nhật trạng thái đơn trả hàng:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi cập nhật trạng thái đơn trả hàng',
@@ -303,11 +260,6 @@ export const updateReturnStatus = async (req, res) => {
   }
 };
 
-/**
- * Cập nhật thông tin đơn trả hàng
- * @route PUT /api/returns/:id
- * @access Private/Admin
- */
 export const updateReturn = async (req, res) => {
   try {
     const { id } = req.params;
@@ -320,7 +272,6 @@ export const updateReturn = async (req, res) => {
       });
     }
     
-    // Tìm đơn trả hàng cần cập nhật
     const returnOrder = await Return.findById(id);
     
     if (!returnOrder) {
@@ -330,7 +281,6 @@ export const updateReturn = async (req, res) => {
       });
     }
     
-    // Chỉ cho phép cập nhật khi đơn hàng đang ở trạng thái "Chờ xử lý"
     if (returnOrder.status !== 'CHO_XU_LY') {
       return res.status(400).json({
         success: false,
@@ -338,7 +288,6 @@ export const updateReturn = async (req, res) => {
       });
     }
     
-    // Lấy thông tin đơn hàng gốc
     const originalOrder = await Order.findById(returnOrder.originalOrder);
     if (!originalOrder) {
       return res.status(404).json({
@@ -347,7 +296,6 @@ export const updateReturn = async (req, res) => {
       });
     }
     
-    // Kiểm tra các sản phẩm trả có trong đơn hàng gốc không
     if (items && items.length > 0) {
       for (const item of items) {
         if (!mongoose.Types.ObjectId.isValid(item.product)) {
@@ -357,7 +305,6 @@ export const updateReturn = async (req, res) => {
           });
         }
   
-        // Tìm sản phẩm trong đơn hàng gốc
         const orderItem = originalOrder.items.find(
           oi => oi.product.toString() === item.product.toString() && 
           oi.variant.colorId.toString() === item.variant.colorId.toString() && 
@@ -371,7 +318,6 @@ export const updateReturn = async (req, res) => {
           });
         }
   
-        // Kiểm tra số lượng trả không vượt quá số lượng trong đơn hàng
         if (item.quantity > orderItem.quantity) {
           return res.status(400).json({
             success: false,
@@ -383,7 +329,6 @@ export const updateReturn = async (req, res) => {
       returnOrder.items = items;
     }
     
-    // Cập nhật tổng số tiền hoàn trả nếu có
     if (totalRefund !== undefined) {
       returnOrder.totalRefund = totalRefund;
     }
@@ -396,7 +341,6 @@ export const updateReturn = async (req, res) => {
       data: returnOrder
     });
   } catch (error) {
-    console.error('Lỗi khi cập nhật đơn trả hàng:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi cập nhật đơn trả hàng',
@@ -405,11 +349,6 @@ export const updateReturn = async (req, res) => {
   }
 };
 
-/**
- * Xóa đơn trả hàng
- * @route DELETE /api/returns/:id
- * @access Private/Admin
- */
 export const deleteReturn = async (req, res) => {
   try {
     const { id } = req.params;
@@ -430,7 +369,6 @@ export const deleteReturn = async (req, res) => {
       });
     }
     
-    // Chỉ cho phép xóa khi đơn hàng đang ở trạng thái "Chờ xử lý"
     if (returnOrder.status !== 'CHO_XU_LY') {
       return res.status(400).json({
         success: false,
@@ -445,7 +383,6 @@ export const deleteReturn = async (req, res) => {
       message: 'Xóa đơn trả hàng thành công'
     });
   } catch (error) {
-    console.error('Lỗi khi xóa đơn trả hàng:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi xóa đơn trả hàng',
@@ -454,11 +391,6 @@ export const deleteReturn = async (req, res) => {
   }
 };
 
-/**
- * Tìm kiếm đơn trả hàng theo mã QR hoặc mã đơn hàng
- * @route GET /api/returns/search
- * @access Private/Admin
- */
 export const searchReturn = async (req, res) => {
   try {
     const { query } = req.query;
@@ -470,22 +402,18 @@ export const searchReturn = async (req, res) => {
       });
     }
     
-    // Tìm kiếm theo mã đơn trả hàng
     const returnOrders = await Return.find({ code: { $regex: query, $options: 'i' } })
       .populate('customer', 'fullName email phoneNumber')
       .populate('staff', 'fullName')
       .populate('originalOrder', 'code')
       .limit(5);
     
-    // Nếu không tìm thấy đơn trả hàng, thử tìm theo đơn hàng gốc
     if (returnOrders.length === 0) {
-      // Tìm đơn hàng gốc trước
       const originalOrders = await Order.find({ code: { $regex: query, $options: 'i' } }).select('_id');
       
       if (originalOrders.length > 0) {
         const orderIds = originalOrders.map(order => order._id);
         
-        // Tìm đơn trả hàng dựa trên đơn hàng gốc
         const returnsByOrder = await Return.find({ originalOrder: { $in: orderIds } })
           .populate('customer', 'fullName email phoneNumber')
           .populate('staff', 'fullName')
@@ -506,7 +434,6 @@ export const searchReturn = async (req, res) => {
       data: returnOrders
     });
   } catch (error) {
-    console.error('Lỗi khi tìm kiếm đơn trả hàng:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi tìm kiếm đơn trả hàng',
@@ -515,16 +442,10 @@ export const searchReturn = async (req, res) => {
   }
 };
 
-/**
- * Lấy thống kê đơn trả hàng
- * @route GET /api/returns/stats
- * @access Private/Admin
- */
 export const getReturnStats = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
     
-    // Xây dựng filter theo ngày
     const dateFilter = {};
     if (startDate) {
       dateFilter.createdAt = { $gte: new Date(startDate) };
@@ -533,13 +454,11 @@ export const getReturnStats = async (req, res) => {
       dateFilter.createdAt = { ...dateFilter.createdAt, $lte: new Date(endDate) };
     }
     
-    // Đếm số lượng đơn theo trạng thái
     const totalPending = await Return.countDocuments({ ...dateFilter, status: 'CHO_XU_LY' });
     const totalRefunded = await Return.countDocuments({ ...dateFilter, status: 'DA_HOAN_TIEN' });
     const totalCancelled = await Return.countDocuments({ ...dateFilter, status: 'DA_HUY' });
     const total = await Return.countDocuments(dateFilter);
     
-    // Tính tổng giá trị hoàn tiền
     const totalRefundAmount = await Return.aggregate([
       { $match: { ...dateFilter, status: 'DA_HOAN_TIEN' } },
       { $group: { _id: null, total: { $sum: '$totalRefund' } } }
@@ -559,11 +478,10 @@ export const getReturnStats = async (req, res) => {
       data: stats
     });
   } catch (error) {
-    console.error('Lỗi khi lấy thống kê đơn trả hàng:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi lấy thống kê đơn trả hàng',
       error: error.message
     });
   }
-}; 
+};

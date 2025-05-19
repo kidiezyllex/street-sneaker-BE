@@ -2,21 +2,14 @@ import jwt from 'jsonwebtoken';
 import Account from '../models/account.model.js';
 import dotenv from 'dotenv';
 import { jwtSecret } from '../config/database.js';
-
+import mongoose from 'mongoose';
 dotenv.config();
-
-/**
- * Middleware xác thực người dùng
- */
 export const authenticate = async (req, res, next) => {
   try {
     let token;
-    // Lấy token từ Authorization header
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
       token = req.headers.authorization.split(' ')[1];
     }
-    
-    // Kiểm tra token tồn tại
     if (!token) {
       return res.status(401).json({
         status: false,
@@ -27,13 +20,19 @@ export const authenticate = async (req, res, next) => {
       });
     }
     
-    // Xác thực token
     try {
       const decoded = jwt.verify(token, jwtSecret);
-    
-      // Tìm người dùng từ token
+
+      if (!mongoose.Types.ObjectId.isValid(decoded.id)) {
+        return res.status(401).json({
+          status: false,
+          message: 'Token chứa ID người dùng không hợp lệ.',
+          data: null,
+          errors: { token: 'Invalid user ID format in token' },
+          timestamp: new Date().toISOString()
+        });
+      }
       const account = await Account.findById(decoded.id).select('-password');
-      
       if (!account) {
         return res.status(401).json({
           status: false,
@@ -43,22 +42,19 @@ export const authenticate = async (req, res, next) => {
           timestamp: new Date().toISOString()
         });
       }
-      // Gán thông tin người dùng vào request
       req.account = account;
       next();
     } catch (jwtError) {
-      console.error('Lỗi xác thực JWT:', jwtError);
       throw jwtError;
     }
   } catch (error) {
-    console.error('Lỗi xác thực:', error);
-    
+   
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({
         status: false,
         message: 'Token không hợp lệ',
         data: null,
-        errors: {},
+        errors: { token: 'Invalid token' },
         timestamp: new Date().toISOString()
       });
     }
@@ -68,14 +64,14 @@ export const authenticate = async (req, res, next) => {
         status: false,
         message: 'Token đã hết hạn',
         data: null,
-        errors: {},
+        errors: { token: 'Token expired' },
         timestamp: new Date().toISOString()
       });
     }
     
     res.status(500).json({
       status: false,
-      message: 'Lỗi server',
+      message: 'Lỗi server trong quá trình xác thực',
       data: null,
       errors: { server: error.message },
       timestamp: new Date().toISOString()
@@ -83,23 +79,16 @@ export const authenticate = async (req, res, next) => {
   }
 };
 
-/**
- * Middleware bảo vệ route - kiểm tra xác thực và gán thông tin người dùng vào request
- * Middleware này kiểm tra token, xác thực và gán thông tin người dùng như authenticate
- * nhưng cung cấp thêm kiểm tra quyền truy cập nâng cao
- */
 export const protect = async (req, res, next) => {
   try {
     let token;
     
-    // Lấy token từ header hoặc cookie
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
       token = req.headers.authorization.split(' ')[1];
     } else if (req.cookies && req.cookies.token) {
       token = req.cookies.token;
     }
     
-    // Kiểm tra token tồn tại
     if (!token) {
       return res.status(401).json({
         status: false,
@@ -110,10 +99,18 @@ export const protect = async (req, res, next) => {
       });
     }
     
-    // Xác thực token
     const decoded = jwt.verify(token, jwtSecret);
+
+    if (!mongoose.Types.ObjectId.isValid(decoded.id)) {
+      return res.status(401).json({
+        status: false,
+        message: 'Token (protect) chứa ID người dùng không hợp lệ.',
+        data: null,
+        errors: { token: 'Invalid user ID format in token' },
+        timestamp: new Date().toISOString()
+      });
+    }
     
-    // Tìm người dùng từ token với thông tin đầy đủ
     const currentAccount = await Account.findById(decoded.id).select('-password');
     
     if (!currentAccount) {
@@ -126,14 +123,12 @@ export const protect = async (req, res, next) => {
       });
     }
     
-    // Kiểm tra xem người dùng có thay đổi mật khẩu sau khi token được tạo không
     if (currentAccount.passwordChangedAt) {
       const passwordChangedTimestamp = parseInt(
         currentAccount.passwordChangedAt.getTime() / 1000,
         10
       );
       
-      // Nếu mật khẩu thay đổi sau khi token được tạo
       if (decoded.iat < passwordChangedTimestamp) {
         return res.status(401).json({
           status: false, 
@@ -145,12 +140,9 @@ export const protect = async (req, res, next) => {
       }
     }
     
-    // Đánh dấu người dùng đã đăng nhập và gán thông tin vào request
     req.account = currentAccount;
     next();
   } catch (error) {
-    console.error('Lỗi xác thực:', error);
-    
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({
         status: false,
@@ -181,9 +173,7 @@ export const protect = async (req, res, next) => {
   }
 };
 
-/**
- * Middleware kiểm tra vai trò admin
- */
+
 export const isAdmin = (req, res, next) => {
   if (req.account && req.account.role === 'ADMIN') {
     next();
@@ -195,9 +185,6 @@ export const isAdmin = (req, res, next) => {
   }
 };
 
-/**
- * Alias cho middleware isAdmin, để phù hợp với coding style trong routes
- */
 export const admin = (req, res, next) => {
   if (req.account && req.account.role === 'ADMIN') {
     next();
@@ -209,10 +196,6 @@ export const admin = (req, res, next) => {
   }
 };
 
-/**
- * Middleware giới hạn truy cập dựa trên vai trò
- * @param  {...string} roles - Các vai trò được phép truy cập
- */
 export const restrictTo = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.account.role)) {
@@ -228,23 +211,18 @@ export const restrictTo = (...roles) => {
   };
 };
 
-/**
- * Middleware kiểm tra coordinator chỉ truy cập dữ liệu thuộc ngành mình
- */
+
 export const checkDepartmentAccess = async (req, res, next) => {
   try {
-    // Nếu là admin, cho phép truy cập tất cả
     if (req.account.role === 'ADMIN') {
       return next();
     }
     
-    // Nếu vai trò khác, từ chối truy cập
     res.status(403).json({
       success: false,
       message: 'Không có quyền truy cập'
     });
   } catch (error) {
-    console.error('Lỗi kiểm tra quyền truy cập ngành:', error);
     res.status(500).json({
       success: false,
       message: 'Lỗi server',

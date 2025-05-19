@@ -62,7 +62,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     return httpServer;
   } catch (error) {
-    console.error("Error registering routes:", error);
     throw error;
   }
 }

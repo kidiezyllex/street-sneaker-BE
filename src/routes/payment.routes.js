@@ -9,7 +9,7 @@ import {
   createCODPayment
 } from '../controllers/payment.controller.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
-import { authorizeAdmin, authorizeStaffOrAdmin } from '../middlewares/role.middleware.js'; // Giả sử bạn có middleware này
+import { authorizeAdmin, authorizeStaffOrAdmin } from '../middlewares/role.middleware.js';
 
 const router = express.Router();
 

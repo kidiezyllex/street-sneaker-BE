@@ -1,13 +1,11 @@
 import Account from '../models/account.model.js';
 import { validatePassword } from '../utils/validation.js';
 import { hashPassword, comparePassword } from '../utils/auth.js';
-// Lấy danh sách tất cả tài khoản
 export const getAllAccounts = async (req, res) => {
   try {
     const { role, status, search, page = 1, limit = 10 } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
-    // Xây dựng query filter
     const filter = {};
     
     if (role) {
@@ -27,7 +25,6 @@ export const getAllAccounts = async (req, res) => {
       ];
     }
     
-    // Thực hiện query với phân trang
     const total = await Account.countDocuments(filter);
     const accounts = await Account.find(filter)
       .select('-password')
@@ -35,7 +32,6 @@ export const getAllAccounts = async (req, res) => {
       .skip(skip)
       .limit(parseInt(limit));
     
-    // Trả về kết quả
     return res.status(200).json({
       success: true,
       message: 'Lấy danh sách tài khoản thành công',
@@ -58,7 +54,6 @@ export const getAllAccounts = async (req, res) => {
   }
 };
 
-// Lấy thông tin chi tiết một tài khoản
 export const getAccountById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -86,12 +81,10 @@ export const getAccountById = async (req, res) => {
   }
 };
 
-// Tạo tài khoản mới (không cần đăng nhập)
 export const createAccount = async (req, res) => {
   try {
     const { fullName, email, password, phoneNumber, role, gender, birthday, citizenId } = req.body;
     
-    // Kiểm tra email hoặc số điện thoại đã tồn tại
     const queryConditions = [];
     if (email && typeof email === 'string') {
       queryConditions.push({ email: email.trim() });
@@ -110,7 +103,6 @@ export const createAccount = async (req, res) => {
       });
     }
     
-    // Tạo tài khoản mới
     const newAccount = new Account({
       fullName,
       email,
@@ -145,13 +137,11 @@ export const createAccount = async (req, res) => {
   }
 };
 
-// Cập nhật thông tin tài khoản
 export const updateAccount = async (req, res) => {
   try {
     const { id } = req.params;
     const { fullName, email, phoneNumber, gender, birthday, citizenId, avatar, status } = req.body;
     
-    // Tìm tài khoản cần cập nhật
     const account = await Account.findById(id);
     
     if (!account) {
@@ -161,7 +151,6 @@ export const updateAccount = async (req, res) => {
       });
     }
     
-    // Kiểm tra email hoặc số điện thoại đã tồn tại
     if (email && email !== account.email) {
       const existingEmailAccount = await Account.findOne({ email });
       if (existingEmailAccount) {
@@ -182,7 +171,6 @@ export const updateAccount = async (req, res) => {
       }
     }
     
-    // Cập nhật thông tin
     if (fullName) account.fullName = fullName;
     if (email) account.email = email;
     if (phoneNumber) account.phoneNumber = phoneNumber;
@@ -216,13 +204,11 @@ export const updateAccount = async (req, res) => {
   }
 };
 
-// Cập nhật trạng thái tài khoản (kích hoạt/vô hiệu hóa)
 export const updateAccountStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
     
-    // Kiểm tra tham số đầu vào
     if (status === undefined) {
       return res.status(400).json({
         success: false,
@@ -230,7 +216,6 @@ export const updateAccountStatus = async (req, res) => {
       });
     }
     
-    // Tìm tài khoản cần cập nhật
     const account = await Account.findById(id);
     
     if (!account) {
@@ -240,7 +225,6 @@ export const updateAccountStatus = async (req, res) => {
       });
     }
     
-    // Ngăn chặn việc vô hiệu hóa tài khoản admin chính
     if (account.role === 'ADMIN' && account.isMainAdmin && status === 'KHONG_HOAT_DONG') {
       return res.status(403).json({
         success: false,
@@ -248,7 +232,6 @@ export const updateAccountStatus = async (req, res) => {
       });
     }
     
-    // Cập nhật trạng thái
     account.status = status;
     await account.save();
     
@@ -269,12 +252,10 @@ export const updateAccountStatus = async (req, res) => {
   }
 };
 
-// Xóa tài khoản
 export const deleteAccount = async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Tìm tài khoản cần xóa
     const account = await Account.findById(id);
     
     if (!account) {
@@ -284,7 +265,6 @@ export const deleteAccount = async (req, res) => {
       });
     }
     
-    // Ngăn chặn việc xóa tài khoản admin chính
     if (account.role === 'ADMIN' && account.isMainAdmin) {
       return res.status(403).json({
         success: false,
@@ -292,7 +272,6 @@ export const deleteAccount = async (req, res) => {
       });
     }
     
-    // Xóa tài khoản
     await Account.deleteOne({ _id: id });
     
     return res.status(200).json({
@@ -308,7 +287,6 @@ export const deleteAccount = async (req, res) => {
   }
 };
 
-// Thêm địa chỉ mới cho tài khoản
 export const addAddress = async (req, res) => {
   try {
     const { id } = req.params;
@@ -323,7 +301,6 @@ export const addAddress = async (req, res) => {
       });
     }
     
-    // Tạo địa chỉ mới
     const newAddress = {
       name,
       phoneNumber,
@@ -335,14 +312,12 @@ export const addAddress = async (req, res) => {
       isDefault: isDefault || false
     };
     
-    // Nếu địa chỉ mới là mặc định, cập nhật tất cả địa chỉ khác không là mặc định
     if (newAddress.isDefault) {
       account.addresses.forEach(address => {
         address.isDefault = false;
       });
     }
     
-    // Thêm địa chỉ mới vào danh sách
     account.addresses.push(newAddress);
     
     await account.save();
@@ -361,7 +336,6 @@ export const addAddress = async (req, res) => {
   }
 };
 
-// Cập nhật địa chỉ
 export const updateAddress = async (req, res) => {
   try {
     const { id, addressId } = req.params;
@@ -376,7 +350,6 @@ export const updateAddress = async (req, res) => {
       });
     }
     
-    // Tìm địa chỉ cần cập nhật
     const addressIndex = account.addresses.findIndex(addr => addr._id.toString() === addressId);
     
     if (addressIndex === -1) {
@@ -386,7 +359,6 @@ export const updateAddress = async (req, res) => {
       });
     }
     
-    // Cập nhật thông tin địa chỉ
     if (name) account.addresses[addressIndex].name = name;
     if (phoneNumber) account.addresses[addressIndex].phoneNumber = phoneNumber;
     if (provinceId) account.addresses[addressIndex].provinceId = provinceId;
@@ -395,9 +367,7 @@ export const updateAddress = async (req, res) => {
     if (specificAddress) account.addresses[addressIndex].specificAddress = specificAddress;
     if (type !== undefined) account.addresses[addressIndex].type = type;
     
-    // Xử lý trường hợp isDefault
     if (isDefault) {
-      // Cập nhật tất cả địa chỉ khác không là mặc định
       account.addresses.forEach((address, index) => {
         if (index !== addressIndex) {
           address.isDefault = false;
@@ -423,7 +393,6 @@ export const updateAddress = async (req, res) => {
   }
 };
 
-// Xóa địa chỉ
 export const deleteAddress = async (req, res) => {
   try {
     const { id, addressId } = req.params;
@@ -437,7 +406,6 @@ export const deleteAddress = async (req, res) => {
       });
     }
     
-    // Tìm địa chỉ cần xóa
     const addressIndex = account.addresses.findIndex(addr => addr._id.toString() === addressId);
     
     if (addressIndex === -1) {
@@ -447,11 +415,9 @@ export const deleteAddress = async (req, res) => {
       });
     }
     
-    // Xóa địa chỉ
     const isDefault = account.addresses[addressIndex].isDefault;
     account.addresses.splice(addressIndex, 1);
     
-    // Nếu địa chỉ vừa xóa là mặc định và còn địa chỉ khác, cập nhật địa chỉ đầu tiên là mặc định
     if (isDefault && account.addresses.length > 0) {
       account.addresses[0].isDefault = true;
     }
@@ -472,7 +438,6 @@ export const deleteAddress = async (req, res) => {
   }
 };
 
-// Lấy thông tin cá nhân người dùng đang đăng nhập
 export const getProfile = async (req, res) => {
   try {
     const accountId = req.account._id || req.account.id;
@@ -499,7 +464,6 @@ export const getProfile = async (req, res) => {
   }
 };
 
-// Cập nhật thông tin cá nhân người dùng đang đăng nhập
 export const updateProfile = async (req, res) => {
   try {
     const { fullName, phoneNumber, gender, birthday, avatar } = req.body;
@@ -513,10 +477,8 @@ export const updateProfile = async (req, res) => {
       });
     }
     
-    // Cập nhật thông tin
     if (fullName) account.fullName = fullName;
     if (phoneNumber && phoneNumber !== account.phoneNumber) {
-      // Kiểm tra số điện thoại đã tồn tại chưa
       const existingPhoneAccount = await Account.findOne({ phoneNumber });
       if (existingPhoneAccount) {
         return res.status(400).json({
@@ -555,7 +517,6 @@ export const updateProfile = async (req, res) => {
   }
 };
 
-// Đổi mật khẩu người dùng đang đăng nhập
 export const changePassword = async (req, res) => {
   try {
     const passwordData = validatePassword(req.body);
@@ -569,7 +530,6 @@ export const changePassword = async (req, res) => {
       });
     }
     
-    // Kiểm tra mật khẩu hiện tại
     const isMatch = await comparePassword(passwordData.currentPassword, account.password);
     
     if (!isMatch) {
@@ -578,11 +538,7 @@ export const changePassword = async (req, res) => {
         message: 'Mật khẩu hiện tại không chính xác'
       });
     }
-    
-    // Mã hóa mật khẩu mới
     const hashedPassword = await hashPassword(passwordData.newPassword);
-    
-    // Cập nhật mật khẩu
     account.password = hashedPassword;
     await account.save();
     
@@ -597,4 +553,4 @@ export const changePassword = async (req, res) => {
       error: error.message
     });
   }
-}; 
+};

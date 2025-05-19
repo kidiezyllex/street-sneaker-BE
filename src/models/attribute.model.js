@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 
-// Brand Schema
 const brandSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -16,7 +15,6 @@ const brandSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Category Schema
 const categorySchema = new mongoose.Schema({
   name: {
     type: String,
@@ -32,7 +30,6 @@ const categorySchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Material Schema
 const materialSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -48,7 +45,6 @@ const materialSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Color Schema
 const colorSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -69,7 +65,6 @@ const colorSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Size Schema
 const sizeSchema = new mongoose.Schema({
   value: {
     type: Number,

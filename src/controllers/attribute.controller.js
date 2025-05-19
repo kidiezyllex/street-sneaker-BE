@@ -125,10 +125,8 @@ import { Brand, Category, Material, Color, Size } from '../models/attribute.mode
  *           description: The date the size was last updated
  */
 
-// Generic controller methods for attributes
 const createGenericController = (Model) => {
   return {
-    // Create a new attribute
     create: async (req, res) => {
       try {
         const attribute = new Model(req.body);
@@ -152,7 +150,6 @@ const createGenericController = (Model) => {
       }
     },
 
-    // Get all attributes
     getAll: async (req, res) => {
       try {
         const { status } = req.query;
@@ -176,7 +173,6 @@ const createGenericController = (Model) => {
       }
     },
 
-    // Get attribute by ID
     getById: async (req, res) => {
       try {
         const attribute = await Model.findById(req.params.id);
@@ -199,7 +195,6 @@ const createGenericController = (Model) => {
       }
     },
 
-    // Update attribute
     update: async (req, res) => {
       try {
         const attribute = await Model.findByIdAndUpdate(
@@ -232,7 +227,6 @@ const createGenericController = (Model) => {
       }
     },
 
-    // Delete attribute
     delete: async (req, res) => {
       try {
         const attribute = await Model.findByIdAndDelete(req.params.id);
@@ -256,7 +250,6 @@ const createGenericController = (Model) => {
   };
 };
 
-// Create controllers for each attribute model
 export const brandController = createGenericController(Brand);
 export const categoryController = createGenericController(Category);
 export const materialController = createGenericController(Material);

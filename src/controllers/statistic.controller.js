@@ -1,17 +1,11 @@
 import Statistic from '../models/statistic.model.js';
 import mongoose from 'mongoose';
 
-/**
- * Lấy danh sách thống kê
- * @route GET /api/statistics
- * @access Private/Admin
- */
 export const getStatistics = async (req, res) => {
   try {
     const { type, startDate, endDate, page = 1, limit = 10 } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
-    // Xây dựng query filter
     const filter = {};
     
     if (type) {
@@ -33,7 +27,6 @@ export const getStatistics = async (req, res) => {
       };
     }
     
-    // Thực hiện query với phân trang
     const total = await Statistic.countDocuments(filter);
     const statistics = await Statistic.find(filter)
       .populate({
@@ -48,7 +41,6 @@ export const getStatistics = async (req, res) => {
       .skip(skip)
       .limit(parseInt(limit));
     
-    // Trả về kết quả
     return res.status(200).json({
       success: true,
       message: 'Lấy danh sách thống kê thành công',
@@ -63,7 +55,6 @@ export const getStatistics = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Lỗi khi lấy danh sách thống kê:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi lấy danh sách thống kê',
@@ -72,11 +63,6 @@ export const getStatistics = async (req, res) => {
   }
 };
 
-/**
- * Lấy chi tiết thống kê
- * @route GET /api/statistics/:id
- * @access Private/Admin
- */
 export const getStatisticById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -111,7 +97,6 @@ export const getStatisticById = async (req, res) => {
       data: statistic
     });
   } catch (error) {
-    console.error('Lỗi khi lấy chi tiết thống kê:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi lấy thông tin thống kê',
@@ -120,16 +105,10 @@ export const getStatisticById = async (req, res) => {
   }
 };
 
-/**
- * Tạo thống kê mới
- * @route POST /api/statistics
- * @access Private/Admin
- */
 export const createStatistic = async (req, res) => {
   try {
     const { date, type, totalOrders, totalRevenue, totalProfit, productsSold, vouchersUsed, customerCount } = req.body;
 
-    // Kiểm tra các trường bắt buộc
     if (!date || !type) {
       return res.status(400).json({
         success: false,
@@ -137,7 +116,6 @@ export const createStatistic = async (req, res) => {
       });
     }
 
-    // Tạo thống kê mới
     const newStatistic = new Statistic({
       date,
       type,
@@ -157,7 +135,6 @@ export const createStatistic = async (req, res) => {
       data: newStatistic
     });
   } catch (error) {
-    console.error('Lỗi khi tạo thống kê:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi tạo thống kê',
@@ -166,11 +143,6 @@ export const createStatistic = async (req, res) => {
   }
 };
 
-/**
- * Cập nhật thống kê
- * @route PUT /api/statistics/:id
- * @access Private/Admin
- */
 export const updateStatistic = async (req, res) => {
   try {
     const { id } = req.params;
@@ -183,7 +155,6 @@ export const updateStatistic = async (req, res) => {
       });
     }
     
-    // Tìm thống kê cần cập nhật
     const statistic = await Statistic.findById(id);
     
     if (!statistic) {
@@ -193,7 +164,6 @@ export const updateStatistic = async (req, res) => {
       });
     }
     
-    // Cập nhật thông tin
     if (totalOrders !== undefined) statistic.totalOrders = totalOrders;
     if (totalRevenue !== undefined) statistic.totalRevenue = totalRevenue;
     if (totalProfit !== undefined) statistic.totalProfit = totalProfit;
@@ -209,7 +179,6 @@ export const updateStatistic = async (req, res) => {
       data: statistic
     });
   } catch (error) {
-    console.error('Lỗi khi cập nhật thống kê:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi cập nhật thống kê',
@@ -218,11 +187,6 @@ export const updateStatistic = async (req, res) => {
   }
 };
 
-/**
- * Xóa thống kê
- * @route DELETE /api/statistics/:id
- * @access Private/Admin
- */
 export const deleteStatistic = async (req, res) => {
   try {
     const { id } = req.params;
@@ -248,7 +212,6 @@ export const deleteStatistic = async (req, res) => {
       message: 'Xóa thống kê thành công'
     });
   } catch (error) {
-    console.error('Lỗi khi xóa thống kê:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi xóa thống kê',
@@ -257,16 +220,10 @@ export const deleteStatistic = async (req, res) => {
   }
 };
 
-/**
- * Lấy báo cáo doanh thu
- * @route GET /api/statistics/revenue
- * @access Private/Admin
- */
 export const getRevenueReport = async (req, res) => {
   try {
     const { startDate, endDate, type = 'DAILY' } = req.query;
     
-    // Kiểm tra ngày bắt đầu và kết thúc
     if (!startDate || !endDate) {
       return res.status(400).json({
         success: false,
@@ -274,7 +231,6 @@ export const getRevenueReport = async (req, res) => {
       });
     }
     
-    // Tạo filter cho query
     const filter = {
       type,
       date: {
@@ -283,19 +239,16 @@ export const getRevenueReport = async (req, res) => {
       }
     };
     
-    // Thực hiện query
     const statistics = await Statistic.find(filter)
       .select('date totalRevenue totalOrders')
       .sort({ date: 1 });
     
-    // Trả về kết quả
     return res.status(200).json({
       success: true,
       message: 'Lấy báo cáo doanh thu thành công',
       data: statistics
     });
   } catch (error) {
-    console.error('Lỗi khi lấy báo cáo doanh thu:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi lấy báo cáo doanh thu',
@@ -304,16 +257,10 @@ export const getRevenueReport = async (req, res) => {
   }
 };
 
-/**
- * Lấy báo cáo sản phẩm bán chạy
- * @route GET /api/statistics/top-products
- * @access Private/Admin
- */
 export const getTopProducts = async (req, res) => {
   try {
     const { startDate, endDate, limit = 10 } = req.query;
     
-    // Kiểm tra ngày bắt đầu và kết thúc
     if (!startDate || !endDate) {
       return res.status(400).json({
         success: false,
@@ -321,7 +268,6 @@ export const getTopProducts = async (req, res) => {
       });
     }
     
-    // Tạo filter cho query
     const filter = {
       date: {
         $gte: new Date(startDate),
@@ -329,14 +275,12 @@ export const getTopProducts = async (req, res) => {
       }
     };
     
-    // Tìm tất cả thống kê trong khoảng thời gian
     const statistics = await Statistic.find(filter)
       .populate({
         path: 'productsSold.product',
         select: 'name code'
       });
     
-    // Tổng hợp dữ liệu sản phẩm
     const productMap = new Map();
     
     statistics.forEach(stat => {
@@ -357,19 +301,16 @@ export const getTopProducts = async (req, res) => {
       });
     });
     
-    // Chuyển kết quả thành mảng và sắp xếp
     const topProducts = Array.from(productMap.values())
       .sort((a, b) => b.totalQuantity - a.totalQuantity)
       .slice(0, parseInt(limit));
     
-    // Trả về kết quả
     return res.status(200).json({
       success: true,
       message: 'Lấy danh sách sản phẩm bán chạy thành công',
       data: topProducts
     });
   } catch (error) {
-    console.error('Lỗi khi lấy danh sách sản phẩm bán chạy:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi lấy danh sách sản phẩm bán chạy',
@@ -378,16 +319,10 @@ export const getTopProducts = async (req, res) => {
   }
 };
 
-/**
- * Tạo thống kê theo ngày
- * @route POST /api/statistics/generate-daily
- * @access Private/Admin
- */
 export const generateDailyStatistic = async (req, res) => {
   try {
     const { date } = req.body;
     
-    // Kiểm tra ngày
     if (!date) {
       return res.status(400).json({
         success: false,
@@ -399,7 +334,6 @@ export const generateDailyStatistic = async (req, res) => {
     const startOfDay = new Date(targetDate.setHours(0, 0, 0, 0));
     const endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
     
-    // Kiểm tra xem đã có thống kê cho ngày này chưa
     const existingStatistic = await Statistic.findOne({
       type: 'DAILY',
       date: {
@@ -415,8 +349,6 @@ export const generateDailyStatistic = async (req, res) => {
       });
     }
     
-    // Tạo thống kê mới (trong thực tế, bạn sẽ truy vấn dữ liệu từ các nguồn khác)
-    // Đây chỉ là ví dụ, bạn cần thay thế phần này bằng logic thực tế
     const newStatistic = new Statistic({
       date: startOfDay,
       type: 'DAILY',
@@ -436,11 +368,10 @@ export const generateDailyStatistic = async (req, res) => {
       data: newStatistic
     });
   } catch (error) {
-    console.error('Lỗi khi tạo thống kê ngày:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi tạo thống kê ngày',
       error: error.message
     });
   }
-}; 
+};

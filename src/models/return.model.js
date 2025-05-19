@@ -60,7 +60,6 @@ const returnSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Tạo code tự động
 returnSchema.pre('save', async function(next) {
   try {
     if (this.isNew && !this.code) {

@@ -12,7 +12,6 @@ export const createVoucher = async (req, res) => {
   try {
     const { code, name, type, value, quantity, startDate, endDate, minOrderValue, maxDiscount, status } = req.body;
 
-    // Kiểm tra các trường bắt buộc
     if (!code || !name || !type || value === undefined || quantity === undefined || !startDate || !endDate) {
       return res.status(400).json({
         success: false,
@@ -20,7 +19,6 @@ export const createVoucher = async (req, res) => {
       });
     }
 
-    // Kiểm tra mã voucher đã tồn tại chưa
     const existingVoucher = await Voucher.findOne({ code });
     if (existingVoucher) {
       return res.status(400).json({
@@ -29,7 +27,6 @@ export const createVoucher = async (req, res) => {
       });
     }
 
-    // Kiểm tra giá trị value hợp lệ
     if (type === 'PERCENTAGE' && (value <= 0 || value > 100)) {
       return res.status(400).json({
         success: false,
@@ -44,7 +41,6 @@ export const createVoucher = async (req, res) => {
       });
     }
 
-    // Kiểm tra thời gian hợp lệ
     const start = new Date(startDate);
     const end = new Date(endDate);
     if (start >= end) {
@@ -54,7 +50,6 @@ export const createVoucher = async (req, res) => {
       });
     }
 
-    // Tạo voucher mới
     const newVoucher = new Voucher({
       code,
       name,
@@ -76,7 +71,6 @@ export const createVoucher = async (req, res) => {
       data: newVoucher
     });
   } catch (error) {
-    console.error('Lỗi khi tạo phiếu giảm giá:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi tạo phiếu giảm giá',
@@ -95,7 +89,6 @@ export const getVouchers = async (req, res) => {
     const { code, name, status, startDate, endDate, page = 1, limit = 10 } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
-    // Xây dựng query filter
     const filter = {};
     
     if (code) {
@@ -110,7 +103,6 @@ export const getVouchers = async (req, res) => {
       filter.status = status;
     }
     
-    // Lọc theo thời gian
     if (startDate || endDate) {
       filter.startDate = {};
       
@@ -124,14 +116,12 @@ export const getVouchers = async (req, res) => {
       }
     }
     
-    // Thực hiện query với phân trang
     const total = await Voucher.countDocuments(filter);
     const vouchers = await Voucher.find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
     
-    // Trả về kết quả
     return res.status(200).json({
       success: true,
       message: 'Lấy danh sách phiếu giảm giá thành công',
@@ -146,7 +136,6 @@ export const getVouchers = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Lỗi khi lấy danh sách phiếu giảm giá:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi lấy danh sách phiếu giảm giá',
@@ -186,7 +175,6 @@ export const getVoucherById = async (req, res) => {
       data: voucher
     });
   } catch (error) {
-    console.error('Lỗi khi lấy chi tiết phiếu giảm giá:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi lấy thông tin phiếu giảm giá',
@@ -212,7 +200,6 @@ export const updateVoucher = async (req, res) => {
       });
     }
     
-    // Tìm voucher cần cập nhật
     const voucher = await Voucher.findById(id);
     
     if (!voucher) {
@@ -222,7 +209,6 @@ export const updateVoucher = async (req, res) => {
       });
     }
     
-    // Cập nhật thông tin
     if (name) voucher.name = name;
     if (quantity !== undefined) voucher.quantity = quantity;
     if (startDate) voucher.startDate = startDate;
@@ -239,7 +225,6 @@ export const updateVoucher = async (req, res) => {
       data: voucher
     });
   } catch (error) {
-    console.error('Lỗi khi cập nhật phiếu giảm giá:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi cập nhật phiếu giảm giá',
@@ -278,7 +263,6 @@ export const deleteVoucher = async (req, res) => {
       message: 'Xóa phiếu giảm giá thành công'
     });
   } catch (error) {
-    console.error('Lỗi khi xóa phiếu giảm giá:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi xóa phiếu giảm giá',
@@ -312,7 +296,6 @@ export const validateVoucher = async (req, res) => {
       });
     }
     
-    // Kiểm tra trạng thái
     if (voucher.status === 'KHONG_HOAT_DONG') {
       return res.status(400).json({
         success: false,
@@ -320,7 +303,6 @@ export const validateVoucher = async (req, res) => {
       });
     }
     
-    // Kiểm tra số lượng
     if (voucher.usedCount >= voucher.quantity) {
       return res.status(400).json({
         success: false,
@@ -328,7 +310,6 @@ export const validateVoucher = async (req, res) => {
       });
     }
     
-    // Kiểm tra thời gian
     const currentDate = new Date();
     if (currentDate < voucher.startDate || currentDate > voucher.endDate) {
       return res.status(400).json({
@@ -337,7 +318,6 @@ export const validateVoucher = async (req, res) => {
       });
     }
     
-    // Kiểm tra giá trị đơn hàng tối thiểu
     if (orderValue && orderValue < voucher.minOrderValue) {
       return res.status(400).json({
         success: false,
@@ -345,12 +325,10 @@ export const validateVoucher = async (req, res) => {
       });
     }
     
-    // Tính toán giá trị giảm giá
     let discountValue = 0;
     if (voucher.type === 'PERCENTAGE') {
       discountValue = (orderValue * voucher.value) / 100;
       
-      // Áp dụng giới hạn giảm giá nếu có
       if (voucher.maxDiscount && discountValue > voucher.maxDiscount) {
         discountValue = voucher.maxDiscount;
       }
@@ -367,7 +345,6 @@ export const validateVoucher = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Lỗi khi kiểm tra mã voucher:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi kiểm tra mã voucher',
@@ -401,10 +378,8 @@ export const incrementVoucherUsage = async (req, res) => {
       });
     }
     
-    // Cập nhật số lượng sử dụng
     voucher.usedCount += 1;
     
-    // Nếu đã sử dụng hết, cập nhật trạng thái
     if (voucher.usedCount >= voucher.quantity) {
       voucher.status = 'KHONG_HOAT_DONG';
     }
@@ -417,7 +392,6 @@ export const incrementVoucherUsage = async (req, res) => {
       data: voucher
     });
   } catch (error) {
-    console.error('Lỗi khi cập nhật lượt sử dụng voucher:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi cập nhật lượt sử dụng voucher',
@@ -451,11 +425,9 @@ export const notifyVoucher = async (req, res) => {
       });
     }
     
-    // Lấy tất cả khách hàng
     const customers = await Account.find({ role: 'CUSTOMER' }).select('_id');
     const customerIds = customers.map(customer => customer._id);
     
-    // Chuẩn bị nội dung thông báo
     const title = `Mã giảm giá mới: ${voucher.name}`;
     const content = `Sử dụng mã ${voucher.code} để được giảm ${
       voucher.type === 'PERCENTAGE' ? `${voucher.value}%` : `${voucher.value.toLocaleString('vi-VN')}đ`
@@ -463,7 +435,6 @@ export const notifyVoucher = async (req, res) => {
       new Date(voucher.startDate).toLocaleDateString('vi-VN')
     } đến ${new Date(voucher.endDate).toLocaleDateString('vi-VN')}.`;
     
-    // Tạo thông báo
     const notification = new Notification({
       type: 'SYSTEM',
       title,
@@ -476,7 +447,6 @@ export const notifyVoucher = async (req, res) => {
     
     await notification.save();
     
-    // Cập nhật trạng thái thông báo thành đã gửi
     notification.status = 'SENT';
     await notification.save();
     
@@ -486,7 +456,6 @@ export const notifyVoucher = async (req, res) => {
       data: notification
     });
   } catch (error) {
-    console.error('Lỗi khi gửi thông báo về voucher:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi gửi thông báo về voucher',
@@ -538,12 +507,11 @@ export const getAvailableVouchersForUser = async (req, res) => {
       });
     }
 
-    // Filter for vouchers that the user was notified about and are currently available
     const filter = {
       _id: { $in: notifiedVoucherIds },
       status: 'HOAT_DONG',
       endDate: { $gte: currentDate },
-      $expr: { $gt: ["$quantity", "$usedCount"] } // quantity > usedCount
+      $expr: { $gt: ["$quantity", "$usedCount"] }
     };
 
     const total = await Voucher.countDocuments(filter);
@@ -567,7 +535,6 @@ export const getAvailableVouchersForUser = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Lỗi khi lấy danh sách phiếu giảm giá cho người dùng:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi lấy danh sách phiếu giảm giá cho người dùng',

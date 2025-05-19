@@ -62,7 +62,6 @@ const accountSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Hash password trước khi lưu
 accountSchema.pre('save', async function(next) {
   if (!this.isModified('password')) {
     return next();
@@ -77,7 +76,6 @@ accountSchema.pre('save', async function(next) {
   }
 });
 
-// Tạo code tự động
 accountSchema.pre('save', async function(next) {
   try {
     if (this.isNew && !this.code) {

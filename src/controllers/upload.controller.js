@@ -15,7 +15,6 @@ export const uploadImage = async (req, res) => {
       });
     }
 
-    // Kiểm tra file có phải là ảnh không
     if (!req.file.mimetype.startsWith('image/')) {
       return res.status(400).json({
         success: false,
@@ -23,14 +22,12 @@ export const uploadImage = async (req, res) => {
       });
     }
 
-    // Tạo đường dẫn lưu trữ duy nhất cho ảnh
     const originalName = req.file.originalname;
     const fileExtension = originalName.split('.').pop();
     const uniqueFileName = `${uuidv4()}.${fileExtension}`;
 
     const folderPath = `street-sneaker/${req.account.id}/images`;
 
-    // Upload ảnh lên Cloudinary
     const imageData = await uploadFileToCloudinary(
       req.file.buffer,
       uniqueFileName,
@@ -47,7 +44,6 @@ export const uploadImage = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Lỗi khi upload ảnh:', error);
     res.status(500).json({
       success: false,
       message: error.message || 'Đã xảy ra lỗi khi tải ảnh lên'

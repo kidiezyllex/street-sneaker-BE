@@ -66,7 +66,6 @@ export const createPromotion = async (req, res) => {
       data: newPromotion
     });
   } catch (error) {
-    console.error('Lỗi khi tạo chương trình khuyến mãi:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi tạo chương trình khuyến mãi',
@@ -129,7 +128,6 @@ export const getPromotions = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Lỗi khi lấy danh sách khuyến mãi:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi lấy danh sách khuyến mãi',
@@ -170,7 +168,6 @@ export const getPromotionById = async (req, res) => {
       data: promotion
     });
   } catch (error) {
-    console.error('Lỗi khi lấy chi tiết khuyến mãi:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi lấy thông tin khuyến mãi',
@@ -274,7 +271,6 @@ export const updatePromotion = async (req, res) => {
       data: promotion
     });
   } catch (error) {
-    console.error('Lỗi khi cập nhật khuyến mãi:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi cập nhật khuyến mãi',
@@ -313,7 +309,6 @@ export const deletePromotion = async (req, res) => {
       message: 'Xóa chương trình khuyến mãi thành công'
     });
   } catch (error) {
-    console.error('Lỗi khi xóa khuyến mãi:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi xóa khuyến mãi',
@@ -353,7 +348,6 @@ export const getProductPromotions = async (req, res) => {
       data: promotions
     });
   } catch (error) {
-    console.error('Lỗi khi lấy khuyến mãi của sản phẩm:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi lấy khuyến mãi',

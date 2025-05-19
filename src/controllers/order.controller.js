@@ -41,10 +41,7 @@ export const createOrder = async (req, res) => {
       paymentStatus: 'PENDING',
       orderStatus: 'CHO_XAC_NHAN'
     });
-
     await newOrder.save();
-
-    // Populate thông tin để trả về
     const populatedOrder = await Order.findById(newOrder._id)
       .populate('customer', 'fullName email phoneNumber')
       .populate('staff', 'fullName')
@@ -60,7 +57,6 @@ export const createOrder = async (req, res) => {
       data: populatedOrder
     });
   } catch (error) {
-    console.error('Lỗi khi tạo đơn hàng:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi tạo đơn hàng',
@@ -86,25 +82,17 @@ export const getOrders = async (req, res) => {
       page = 1, 
       limit = 10 
     } = req.query;
-    
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    
-    // Xây dựng query filter
     const filter = {};
-    
     if (customer) {
       filter.customer = customer;
     }
-    
     if (orderStatus) {
       filter.orderStatus = orderStatus;
     }
-    
     if (paymentStatus) {
       filter.paymentStatus = paymentStatus;
     }
-    
-    // Lọc theo khoảng thời gian
     if (startDate || endDate) {
       filter.createdAt = {};
       if (startDate) {
@@ -114,27 +102,47 @@ export const getOrders = async (req, res) => {
         filter.createdAt.$lte = new Date(endDate);
       }
     }
-    
-    // Tìm kiếm theo mã đơn hàng
     if (search) {
       filter.code = { $regex: search, $options: 'i' };
     }
-    
-    // Thực hiện query với phân trang
     const total = await Order.countDocuments(filter);
     const orders = await Order.find(filter)
-      .populate('customer', 'fullName email phoneNumber')
-      .populate('staff', 'fullName')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
+    const populatedOrders = await Promise.all(orders.map(async (order) => {
+      const orderObj = order.toObject();
+      if (order.customer && mongoose.Types.ObjectId.isValid(order.customer)) {
+        try {
+          const populatedCustomer = await Order.findById(order._id)
+            .populate('customer', 'fullName email phoneNumber');
+          
+          if (populatedCustomer && populatedCustomer.customer) {
+            orderObj.customer = populatedCustomer.customer;
+          }
+        } catch (err) {
+        }
+      }
+      if (order.staff && mongoose.Types.ObjectId.isValid(order.staff)) {
+        try {
+          const populatedStaff = await Order.findById(order._id)
+            .populate('staff', 'fullName');
+          
+          if (populatedStaff && populatedStaff.staff) {
+            orderObj.staff = populatedStaff.staff;
+          }
+        } catch (err) {
+        }
+      }
+      
+      return orderObj;
+    }));
     
-    // Trả về kết quả
     return res.status(200).json({
       success: true,
       message: 'Lấy danh sách đơn hàng thành công',
       data: {
-        orders,
+        orders: populatedOrders,
         pagination: {
           totalItems: total,
           totalPages: Math.ceil(total / parseInt(limit)),
@@ -144,7 +152,6 @@ export const getOrders = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Lỗi khi lấy danh sách đơn hàng:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi lấy danh sách đơn hàng',
@@ -170,7 +177,6 @@ export const getOrderById = async (req, res) => {
     }
     
     const order = await Order.findById(id)
-      .populate('customer', 'fullName email phoneNumber addresses')
       .populate('staff', 'fullName')
       .populate('voucher')
       .populate({
@@ -185,12 +191,19 @@ export const getOrderById = async (req, res) => {
       });
     }
     
-    // Kiểm tra quyền truy cập (chỉ admin hoặc người dùng sở hữu đơn hàng mới có quyền xem)
     if (req.account.role !== 'ADMIN' && order.customer._id.toString() !== req.account._id.toString()) {
       return res.status(403).json({
         success: false,
         message: 'Bạn không có quyền truy cập đơn hàng này'
       });
+    }
+    
+    if (order && order.customer && mongoose.Types.ObjectId.isValid(order.customer)) {
+      try {
+        await order.populate('customer', 'fullName email phoneNumber addresses');
+      } catch (err) {
+        console.error("Error populating customer:", err);
+      }
     }
     
     return res.status(200).json({
@@ -199,7 +212,6 @@ export const getOrderById = async (req, res) => {
       data: order
     });
   } catch (error) {
-    console.error('Lỗi khi lấy chi tiết đơn hàng:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi lấy thông tin đơn hàng',
@@ -229,7 +241,6 @@ export const updateOrder = async (req, res) => {
       });
     }
     
-    // Tìm đơn hàng cần cập nhật
     const order = await Order.findById(id);
     
     if (!order) {
@@ -239,7 +250,6 @@ export const updateOrder = async (req, res) => {
       });
     }
     
-    // Cập nhật thông tin
     if (shippingAddress) {
       order.shippingAddress = { ...order.shippingAddress, ...shippingAddress };
     }
@@ -254,7 +264,6 @@ export const updateOrder = async (req, res) => {
     
     await order.save();
     
-    // Trả về đơn hàng đã cập nhật
     const updatedOrder = await Order.findById(id)
       .populate('customer', 'fullName email phoneNumber')
       .populate('staff', 'fullName')
@@ -270,7 +279,6 @@ export const updateOrder = async (req, res) => {
       data: updatedOrder
     });
   } catch (error) {
-    console.error('Lỗi khi cập nhật đơn hàng:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi cập nhật đơn hàng',
@@ -305,7 +313,6 @@ export const cancelOrder = async (req, res) => {
       });
     }
     
-    // Chỉ cho phép hủy đơn hàng khi trạng thái là CHO_XAC_NHAN hoặc CHO_GIAO_HANG
     if (order.orderStatus !== 'CHO_XAC_NHAN' && order.orderStatus !== 'CHO_GIAO_HANG') {
       return res.status(400).json({
         success: false,
@@ -313,7 +320,6 @@ export const cancelOrder = async (req, res) => {
       });
     }
     
-    // Kiểm tra quyền: chỉ admin hoặc chủ đơn hàng mới có quyền hủy
     if (req.account.role !== 'ADMIN' && order.customer._id.toString() !== req.account._id.toString()) {
       return res.status(403).json({
         success: false,
@@ -321,7 +327,6 @@ export const cancelOrder = async (req, res) => {
       });
     }
     
-    // Cập nhật trạng thái đơn hàng thành đã hủy
     order.orderStatus = 'DA_HUY';
     await order.save();
     
@@ -331,7 +336,6 @@ export const cancelOrder = async (req, res) => {
       data: order
     });
   } catch (error) {
-    console.error('Lỗi khi hủy đơn hàng:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi hủy đơn hàng',
@@ -373,7 +377,6 @@ export const updateOrderStatus = async (req, res) => {
       });
     }
     
-    // Cập nhật trạng thái
     order.orderStatus = status;
     await order.save();
     
@@ -383,7 +386,6 @@ export const updateOrderStatus = async (req, res) => {
       data: order
     });
   } catch (error) {
-    console.error('Lỗi khi cập nhật trạng thái đơn hàng:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi cập nhật trạng thái đơn hàng',
@@ -404,14 +406,12 @@ export const getMyOrders = async (req, res) => {
     
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
-    // Xây dựng filter
     const filter = { customer: userId };
     
     if (orderStatus) {
       filter.orderStatus = orderStatus;
     }
     
-    // Thực hiện query
     const total = await Order.countDocuments(filter);
     const orders = await Order.find(filter)
       .sort({ createdAt: -1 })
@@ -432,7 +432,6 @@ export const getMyOrders = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Lỗi khi lấy danh sách đơn hàng:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi lấy danh sách đơn hàng',
@@ -484,7 +483,6 @@ export const getOrdersByUserId = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Lỗi khi lấy danh sách đơn hàng theo userId:', error);
     return res.status(500).json({
       success: false,
       message: 'Đã xảy ra lỗi khi lấy danh sách đơn hàng',
@@ -559,10 +557,8 @@ export const createPOSOrder = async (req, res) => {
       data: populatedOrder
     });
   } catch (error) {
-    console.error('Lỗi khi tạo đơn hàng POS:', error);
-    // Check for duplicate key error (e.g., if orderId is not unique)
     if (error.code === 11000) {
-        return res.status(409).json({ // 409 Conflict
+        return res.status(409).json({ 
             success: false,
             message: 'Lỗi khi tạo đơn hàng POS: Mã đơn hàng đã tồn tại.',
             error: error.message
