@@ -7,7 +7,8 @@ import {
   deleteStatistic,
   getRevenueReport,
   getTopProducts,
-  generateDailyStatistic
+  generateDailyStatistic,
+  getAnalytics
 } from '../controllers/statistic.controller.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
 import { authorizeAdmin } from '../middlewares/role.middleware.js';
@@ -363,5 +364,72 @@ router.get('/top-products', authenticate, authorizeAdmin, getTopProducts);
  *         description: Lỗi máy chủ
  */
 router.post('/generate-daily', authenticate, authorizeAdmin, generateDailyStatistic);
+
+/**
+ * @swagger
+ * /statistics/analytics:
+ *   get:
+ *     summary: Lấy thống kê phân tích tổng quan
+ *     tags: [Statistics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: days
+ *         schema:
+ *           type: integer
+ *           enum: [1, 30, 90]
+ *         description: Số ngày để lọc dữ liệu (1, 30, 90). Không truyền thì lấy tất cả thời gian
+ *     responses:
+ *       200:
+ *         description: Lấy thống kê phân tích thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     period:
+ *                       type: string
+ *                       description: Khoảng thời gian thống kê
+ *                     totalRevenue:
+ *                       type: number
+ *                       description: Tổng doanh thu
+ *                     totalOrders:
+ *                       type: number
+ *                       description: Tổng số đơn hàng
+ *                     totalProfit:
+ *                       type: number
+ *                       description: Tổng lợi nhuận
+ *                     newCustomers:
+ *                       type: number
+ *                       description: Số khách hàng mới
+ *                     growthRate:
+ *                       type: string
+ *                       description: Tỷ lệ tăng trưởng so với kỳ trước
+ *                     ordersByStatus:
+ *                       type: array
+ *                       description: Thống kê đơn hàng theo trạng thái
+ *                     revenueByPaymentMethod:
+ *                       type: array
+ *                       description: Doanh thu theo phương thức thanh toán
+ *                     topProducts:
+ *                       type: array
+ *                       description: Top 5 sản phẩm bán chạy
+ *                     averageOrderValue:
+ *                       type: number
+ *                       description: Giá trị đơn hàng trung bình
+ *       401:
+ *         description: Không có quyền truy cập
+ *       500:
+ *         description: Lỗi máy chủ
+ */
+router.get('/analytics', authenticate, authorizeAdmin, getAnalytics);
 
 export default router; 

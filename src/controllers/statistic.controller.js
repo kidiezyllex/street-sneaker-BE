@@ -375,3 +375,195 @@ export const generateDailyStatistic = async (req, res) => {
     });
   }
 };
+
+export const getAnalytics = async (req, res) => {
+  try {
+    const { days } = req.query;
+    
+    // Tính toán khoảng thời gian
+    let dateFilter = {};
+    if (days) {
+      const daysNum = parseInt(days);
+      if (daysNum > 0) {
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(endDate.getDate() - daysNum);
+        
+        dateFilter = {
+          createdAt: {
+            $gte: startDate,
+            $lte: endDate
+          }
+        };
+      }
+    }
+
+    // Import models
+    const Order = (await import('../models/order.model.js')).default;
+    const Account = (await import('../models/account.model.js')).default;
+    const Product = (await import('../models/product.model.js')).default;
+
+    // 1. Tổng doanh thu từ các đơn hàng đã hoàn thành
+    const revenueResult = await Order.aggregate([
+      {
+        $match: {
+          ...dateFilter,
+          orderStatus: { $in: ['DA_GIAO_HANG', 'HOAN_THANH'] },
+          paymentStatus: 'PAID'
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: '$total' }
+        }
+      }
+    ]);
+    const totalRevenue = revenueResult.length > 0 ? revenueResult[0].totalRevenue : 0;
+
+    // 2. Tổng số đơn hàng
+    const totalOrders = await Order.countDocuments({
+      ...dateFilter,
+      orderStatus: { $ne: 'DA_HUY' }
+    });
+
+    // 3. Tính lợi nhuận (doanh thu - chi phí sản xuất)
+    // Giả sử lợi nhuận = 30% doanh thu (có thể điều chỉnh theo logic business)
+    const profitMargin = 0.3; // 30% profit margin
+    const totalProfit = totalRevenue * profitMargin;
+
+    // 4. Khách hàng mới
+    const newCustomersCount = await Account.countDocuments({
+      ...dateFilter,
+      role: 'CUSTOMER'
+    });
+
+    // Thống kê bổ sung: Đơn hàng theo trạng thái
+    const ordersByStatus = await Order.aggregate([
+      {
+        $match: dateFilter
+      },
+      {
+        $group: {
+          _id: '$orderStatus',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Thống kê bổ sung: Doanh thu theo phương thức thanh toán
+    const revenueByPaymentMethod = await Order.aggregate([
+      {
+        $match: {
+          ...dateFilter,
+          orderStatus: { $in: ['DA_GIAO_HANG', 'HOAN_THANH'] },
+          paymentStatus: 'PAID'
+        }
+      },
+      {
+        $group: {
+          _id: '$paymentMethod',
+          revenue: { $sum: '$total' },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Thống kê bổ sung: Top 5 sản phẩm bán chạy
+    const topProducts = await Order.aggregate([
+      {
+        $match: {
+          ...dateFilter,
+          orderStatus: { $in: ['DA_GIAO_HANG', 'HOAN_THANH'] }
+        }
+      },
+      { $unwind: '$items' },
+      {
+        $group: {
+          _id: '$items.product',
+          totalQuantity: { $sum: '$items.quantity' },
+          totalRevenue: { $sum: { $multiply: ['$items.quantity', '$items.price'] } }
+        }
+      },
+      { $sort: { totalQuantity: -1 } },
+      { $limit: 5 },
+      {
+        $lookup: {
+          from: 'products',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'productInfo'
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          totalQuantity: 1,
+          totalRevenue: 1,
+          productName: { $arrayElemAt: ['$productInfo.name', 0] },
+          productCode: { $arrayElemAt: ['$productInfo.code', 0] }
+        }
+      }
+    ]);
+
+    // Tính toán tỷ lệ tăng trưởng so với kỳ trước (nếu có days)
+    let growthRate = null;
+    if (days) {
+      const daysNum = parseInt(days);
+      const previousPeriodStart = new Date();
+      previousPeriodStart.setDate(previousPeriodStart.getDate() - (daysNum * 2));
+      const previousPeriodEnd = new Date();
+      previousPeriodEnd.setDate(previousPeriodEnd.getDate() - daysNum);
+
+      const previousRevenueResult = await Order.aggregate([
+        {
+          $match: {
+            createdAt: {
+              $gte: previousPeriodStart,
+              $lte: previousPeriodEnd
+            },
+            orderStatus: { $in: ['DA_GIAO_HANG', 'HOAN_THANH'] },
+            paymentStatus: 'PAID'
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            totalRevenue: { $sum: '$total' }
+          }
+        }
+      ]);
+
+      const previousRevenue = previousRevenueResult.length > 0 ? previousRevenueResult[0].totalRevenue : 0;
+      if (previousRevenue > 0) {
+        growthRate = ((totalRevenue - previousRevenue) / previousRevenue * 100).toFixed(2);
+      }
+    }
+
+    const analytics = {
+      period: days ? `${days} ngày gần nhất` : 'Tất cả thời gian',
+      totalRevenue,
+      totalOrders,
+      totalProfit,
+      newCustomers: newCustomersCount,
+      growthRate: growthRate ? `${growthRate}%` : null,
+      ordersByStatus,
+      revenueByPaymentMethod,
+      topProducts,
+      averageOrderValue: totalOrders > 0 ? (totalRevenue / totalOrders).toFixed(2) : 0
+    };
+
+    return res.status(200).json({
+      success: true,
+      message: 'Lấy thống kê phân tích thành công',
+      data: analytics
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Đã xảy ra lỗi khi lấy thống kê phân tích',
+      error: error.message
+    });
+  }
+};
