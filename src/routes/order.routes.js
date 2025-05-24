@@ -446,47 +446,7 @@ router.put('/:id', authenticate, authorizeAdmin, updateOrder);
  */
 router.patch('/:id/cancel', authenticate, cancelOrder);
 
-/**
- * @swagger
- * /orders/{id}/status:
- *   patch:
- *     summary: Cập nhật trạng thái đơn hàng
- *     tags: [Orders]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: ID của đơn hàng
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - status
- *             properties:
- *               status:
- *                 type: string
- *                 enum: [CHO_XAC_NHAN, CHO_GIAO_HANG, DANG_VAN_CHUYEN, DA_GIAO_HANG, HOAN_THANH, DA_HUY]
- *     responses:
- *       200:
- *         description: Cập nhật trạng thái đơn hàng thành công
- *       400:
- *         description: ID không hợp lệ hoặc thiếu trạng thái
- *       401:
- *         description: Không có quyền truy cập
- *       403:
- *         description: Không có quyền admin
- *       404:
- *         description: Không tìm thấy đơn hàng
- *       500:
- *         description: Lỗi máy chủ
- */
+/** * @swagger * /orders/{id}/status: *   patch: *     summary: Cập nhật trạng thái đơn hàng và trạng thái thanh toán *     tags: [Orders] *     security: *       - bearerAuth: [] *     parameters: *       - in: path *         name: id *         required: true *         schema: *           type: string *         description: ID của đơn hàng *     requestBody: *       required: true *       content: *         application/json: *           schema: *             type: object *             properties: *               status: *                 type: string *                 enum: [CHO_XAC_NHAN, CHO_GIAO_HANG, DANG_VAN_CHUYEN, DA_GIAO_HANG, HOAN_THANH, DA_HUY] *                 description: Trạng thái đơn hàng (tùy chọn) *               paymentStatus: *                 type: string *                 enum: [PENDING, PARTIAL_PAID, PAID] *                 description: Trạng thái thanh toán (tùy chọn) *     responses: *       200: *         description: Cập nhật trạng thái đơn hàng thành công *       400: *         description: ID không hợp lệ hoặc thiếu trạng thái *       401: *         description: Không có quyền truy cập *       403: *         description: Không có quyền admin *       404: *         description: Không tìm thấy đơn hàng *       500: *         description: Lỗi máy chủ */
 router.patch('/:id/status', authenticate, authorizeAdmin, updateOrderStatus);
 
 /**

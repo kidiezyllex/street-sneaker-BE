@@ -352,7 +352,7 @@ export const cancelOrder = async (req, res) => {
 export const updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, paymentStatus } = req.body;
     
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -361,29 +361,51 @@ export const updateOrderStatus = async (req, res) => {
       });
     }
     
-    if (!status) {
+    if (!status && !paymentStatus) {
       return res.status(400).json({
         success: false,
-        message: 'Vui lòng cung cấp trạng thái mới'
+        message: 'Vui lòng cung cấp ít nhất một trạng thái cần cập nhật (status hoặc paymentStatus)'
       });
     }
     
-    const order = await Order.findById(id);
+    if (status && !['CHO_XAC_NHAN', 'CHO_GIAO_HANG', 'DANG_VAN_CHUYEN', 'DA_GIAO_HANG', 'HOAN_THANH', 'DA_HUY'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Trạng thái đơn hàng không hợp lệ'
+      });
+    }
     
-    if (!order) {
+    if (paymentStatus && !['PENDING', 'PARTIAL_PAID', 'PAID'].includes(paymentStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Trạng thái thanh toán không hợp lệ'
+      });
+    }
+    
+    const updateData = {};
+    if (status) updateData.orderStatus = status;
+    if (paymentStatus) updateData.paymentStatus = paymentStatus;
+    
+    const updatedOrder = await Order.findByIdAndUpdate(
+      id,
+      updateData,
+      { 
+        new: true, 
+        runValidators: false 
+      }
+    );
+    
+    if (!updatedOrder) {
       return res.status(404).json({
         success: false,
         message: 'Không tìm thấy đơn hàng'
       });
     }
     
-    order.orderStatus = status;
-    await order.save();
-    
     return res.status(200).json({
       success: true,
       message: 'Cập nhật trạng thái đơn hàng thành công',
-      data: order
+      data: updatedOrder
     });
   } catch (error) {
     return res.status(500).json({
